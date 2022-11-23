@@ -1,0 +1,2 @@
+
+int put(char a);
