@@ -1,16 +1,18 @@
+//`define MUL_BOOTH
 module alu_fusion(
+    input clk,
+    input rst_n,
     input [63:0]    in0,
     input [63:0]    in1,
     input [6:0]     alu_op,
 
+    input           en,
+    output          valid,
+    output          ready,
 
-    output reg [63:0]   out_i,
-    output reg [63:0]   out_m,
-    output reg [63:0]   out_w,
-    output reg [63:0]   out_mw,
-    output reg [63:0]   out
+    output[63:0]    out
 
-);
+); 
 
     wire [63:0]     iadd;
     wire [63:0]     isub;
@@ -81,33 +83,62 @@ module alu_fusion(
     assign in1_w_sel = w?in1_w:in0;
     assign in2_w_sel = w?in2_w:in1;
 
+    reg [1:0]   mul_sign;
+    always@(*)begin
+        case(alu_op[2:0])
+            3'b000: mul_sign = 2'b11;
+            3'b001: mul_sign = 2'b11;
+            3'b010: mul_sign = 2'b10;
+            3'b011: mul_sign = 2'b00;
+            default: mul_sign = 2'b11;
+        endcase
+    end
 
-    ysyx_22050518_mul mul1(
-        .clk(clk)
-        ,.rst_n(rst_n)
-        ,.mul_valid()
-        ,.flush()
-        ,.mulw(alu_op[6])
-        ,.mul_signed()
-        ,.multiplicand(in1_w_sel)
-        ,.multiplier(in2_w_sel)
-        ,.mul_ready()
-        ,.out_valid()
-        ,.result_hi(mul_out_h)
-        ,.result_lo(mul_out_l)
+    wire mul_valid;
+    wire mul_ready;
+    `ifdef MUL_BOOTH
+    mul mul1(
+        .clk            (clk)
+        ,.rst_n         (rst_n)
+        ,.mul_valid     (en&((alu_op[4:0]==5'b11000)|(alu_op[4:0]==5'b11001)|(alu_op[4:0]==5'b11010)|(alu_op[4:0]==5'b11011)))
+        ,.flush         (1'b0)
+        ,.mulw          (alu_op[6])
+        ,.mul_signed    (mul_sign)
+        ,.multiplicand  (in1_w_sel)
+        ,.multiplier    (in2_w_sel)
+        ,.out_ready     (mul_ready)
+        ,.out_valid     (mul_valid)
+        ,.result_hi     (mul_out_h)
+        ,.result_lo     (mul_out_l)
     );
-
-
+    `endif
+    `ifndef MUL_BOOTH
+    assign imul      = $signed(in1_w_sel)*$signed(in2_w_sel);
+    assign imulh     = $signed(in1_w_sel)*$signed(in2_w_sel)>>64;
+    assign imulhu    = (in1_w_sel*in2_w_sel)>>64;
+    assign imulhsu   = ( $signed(in1_w_sel)*(in2_w_sel))>>64;
+    assign ready_m   = 1'b1;
+    `endif
+    /*
+    //assign idiv      = w?($signed(in1_w_sel[31:0])/$signed(in2_w_sel[31:0])):($signed(in1_w_sel)/$signed(in2_w_sel));
+    //assign idivu     = in1_w_sel/in2_w_sel;
+    //assign irem      =  w?($signed(in1_w_sel[31:0])%$signed(in2_w_sel[31:0])):($signed(in1_w_sel)%$signed(in2_w_sel));
+    //assign iremu     = in1_w_sel%in2_w_sel;
+    */
+    `ifdef MUL_BOOTH
     assign imul      = mul_out_l;
     assign imulh     = mul_out_h;
     assign imulhu    = mul_out_h;
     assign imulhsu   = mul_out_h;
-    assign idiv      = $signed(in1_w_sel)/$signed(in2_w_sel);
-    assign idivu     = in1_w_sel/in2_w_sel;
-    assign irem      = $signed(in1_w_sel)%$signed(in2_w_sel);
-    assign iremu     = in1_w_sel%in2_w_sel;
+
+    assign ready_m = mul_ready&~((alu_op[4:0]==5'b11000)|(alu_op[4:0]==5'b11001)|(alu_op[4:0]==5'b11010)|(alu_op[4:0]==5'b11011))|mul_valid;
+    `endif
 
 
+    assign idiv      = div_q;
+    assign idivu     = div_q;
+    assign irem      = div_r;
+    assign iremu     = div_r;
     
 
 
@@ -116,14 +147,18 @@ module alu_fusion(
     assign isltu= (in0<in1)?64'b1:64'b0;
     assign islt = ($signed(in0)<$signed(in1))?64'b1:64'b0;
     assign ixor = in1_w_sel ^ in2_w_sel;
-    assign isrl = in1_w_sel >> in2_w_sel;
-    assign isll = in1_w_sel << in2_w_sel;
+    //assign isrl = in1_w_sel >> in2_w_sel;
+    //assign isll = in1_w_sel << in2_w_sel;
     assign ior  = in1_w_sel | in2_w_sel;
     assign iand = in1_w_sel & in2_w_sel;
     //assign isub = in1_w_sel - in2_w_sel;
-    assign isra = w?israw:($signed(in1_w_sel) )>>> (in2_w_sel&64'b111111);
+    //assign isra = w?{{32{israw[31]}},israw[31:0]}:($signed(in1_w_sel) )>>> (in2_w_sel&64'b111111);
     wire [63:0] israw;
-    assign israw = ($signed(in1_w_sel[31:0]) )>>> (in2_w_sel&64'b111111);
+    //assign israw = ($signed(in1_w_sel[31:0]) )>>> (in2_w_sel&64'b111111);
+
+    wire [63:0] isar_l;
+    assign isra = w?israw:isar_l;
+    shift shift1(.in0(in1_w_sel),.in1(in2_w_sel&(w?64'b11111:64'b111111)),.logic_r(isrl),.logic_l(isll),.arithmetic_r(isar_l),.arithmetic_wr(israw));
 
     always@(*)begin
         case(alu_op[4:0])
@@ -151,8 +186,35 @@ module alu_fusion(
 
     end
 
-    reg [64:0] out_r;
+    reg [63:0] out_r;
     assign out = w?{{32{out_r[31]}},out_r[31:0]}:out_r;
+
+    wire [63:0] div_q;
+    wire [63:0] div_r;
+
+    wire        div_valid;
+    wire        div_ready;
+    ysyx_22050518_div div_1(
+         .clk(clk)
+        ,.rst_n(rst_n)
+        ,.dividend(in0)
+        ,.divisor(in1)
+        ,.div_valid(en&((alu_op[4:0]==5'b11100)|(alu_op[4:0]==5'b11101)|(alu_op[4:0]==5'b11110)|(alu_op[4:0]==5'b11111)))
+        ,.divw(w)
+        ,.div_signed(alu_op[4:0]==5'b11100)
+        ,.flush(1'b0)
+        ,.out_valid(div_valid)
+        ,.out_ready(div_ready)
+        ,.quotient(div_q)
+        ,.remainder(div_r)
+    );
+
+    assign valid = ((alu_op[4:0]==5'b11100)|(alu_op[4:0]==5'b11101)|(alu_op[4:0]==5'b11110)|(alu_op[4:0]==5'b11111))?div_valid:1'b1;
+
+    wire ready_d;
+    wire ready_m;
+    assign ready_d = div_ready&~((alu_op[4:0]==5'b11100)|(alu_op[4:0]==5'b11101)|(alu_op[4:0]==5'b11110)|(alu_op[4:0]==5'b11111))|div_valid;
+    assign ready   = ready_d&&ready_m;
 
 
 endmodule 

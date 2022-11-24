@@ -1,4 +1,4 @@
-`timescale 1ns / 1ps
+
 //////////////////////////////////////////////////////////////////////////////////
 // Company: 
 // Engineer: 
@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module ysyx_22050518_mul(
+module mul(
     input           clk,
     input           rst_n,
     input           mul_valid,
@@ -29,12 +29,43 @@ module ysyx_22050518_mul(
     input [1:0]     mul_signed,
     input [63:0]    multiplicand,
     input [63:0]    multiplier,
-    output          mul_ready,
+    output          out_ready,
     output          out_valid,
     output [63:0]   result_hi,
     output [63:0]   result_lo
 
     );
+
+    reg [3:0]   fsm;
+    reg [3:0]   fsm_next;
+
+    assign out_valid = fsm==4'd8;
+    assign out_ready = fsm==4'b0;
+    always@(*)begin
+        case(fsm)
+            4'd0: fsm_next = mul_valid ? 4'd1:4'd0;
+            4'd1: fsm_next = 4'd2;
+            4'd2: fsm_next = 4'd3;
+            4'd3: fsm_next = 4'd4;
+            4'd4: fsm_next = 4'd5;
+            4'd5: fsm_next = 4'd6;
+            4'd6: fsm_next = 4'd7;
+            4'd7: fsm_next = 4'd8;
+            4'd8: fsm_next = 4'd0;
+            default: fsm_next = 4'd0;
+        endcase
+    end
+
+
+    always@(posedge clk)begin
+        if((!rst_n)|flush)begin
+            fsm <= 4'b0;
+        end
+        else begin
+            fsm <= fsm_next;
+        end
+    end
+
     wire [131:0] x_0;
     wire [131:0] x_1;
     wire [131:0] x_2;
@@ -69,7 +100,7 @@ module ysyx_22050518_mul(
     wire [131:0] x_31;
     wire [131:0] x_32;
     
-    wire [31:0]c_0;
+    wire [32:0]c_0;
 
     reg [131:0] in1;
     reg [66:0]  in2;
@@ -144,11 +175,12 @@ module ysyx_22050518_mul(
     );
 
     wire [131:0]    s;
-    wire [66:0]     cc;
+    wire [183:0]     cc;
 
     wallace_tree w1(
-
-    .c(cc)
+    .clk(clk)
+    ,.rst_n(rst_n)
+    ,.c(cc)
     , .s(s)
     ,.c_last_bit_0(c_0)
     ,.x_0(x_0)
@@ -185,8 +217,8 @@ module ysyx_22050518_mul(
     ,. x_31(x_31)
     ,. x_32(x_32)
     );
-    
-    assign {result_hi,result_lo}= {cc,c_0[30]} +s +c_0[31];
+    wire f_c_out;
+    assign {f_c_out,result_hi,result_lo}= {cc,c_0[31]} +s + c_0[32];
 
     //ysyx_22050518_add add(.in1(in0),.in2(add_in2),.c_in(alu_op[4]),.out(add_out));
 

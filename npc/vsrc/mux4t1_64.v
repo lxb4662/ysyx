@@ -9,10 +9,10 @@ module mux4t1_64(
 
 always@(*)begin
     case(sel)
-        2'd0: out <= in0;
-        2'd1: out <= in1;
-        2'd2: out <= in2;
-        2'd3: out <= in3;
+        2'd0: out = in0;
+        2'd1: out = in1;
+        2'd2: out = in2;
+        2'd3: out = in3;
     endcase 
 end
 endmodule 

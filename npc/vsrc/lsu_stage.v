@@ -20,16 +20,10 @@ module lsu_stage(
     input                   rd_w,
     input [4:0]             rdr,
 
-    output wire [63:0]      rd_wire,
-    output                  rd_w_o,
-    output [63:0]           rd_o,
+    output reg              rd_w_o,
+    output  [63:0]          rd_o,
     output reg [4:0]        rd_addr_o,
 
-    input [63:0]            rd_i,
-
-    output [7:0]            uart_out,
-    output                  uart_en,
-    input                   uart_get,
 
     output                  skip_ref,
 
@@ -39,9 +33,18 @@ module lsu_stage(
     output [1:0]            dcache_write_len,
     output [63:0]           dcache_write_data,
     input  [63:0]           dcache_read_data,
-    output                  dcache_valid,
+    input                   dcache_valid,
     input                   dcache_ready,
     output reg              valid_o,  
+
+    output                  rw_valid_o,
+    output                  rw_write_o,
+    input                   rw_valid_i,
+    input [31:0]            data_read_i,
+    input                   data_ready_to_read,        //unsed
+    output[31:0]            rw_w_data_i,
+    output[63:0]            rw_addr_i,
+    output[ 3:0]            rw_size_i,
 
     output                  stall,
 
@@ -49,7 +52,7 @@ module lsu_stage(
 
 );
 
-assign pipe3_allowin = (dcache_valid&&lsu_en)||(!lsu_en);
+assign pipe3_allowin = (dcache_valid&&lsu_en&&(dcache_addr[31:28]==4'h8))||(!lsu_en)||((dcache_addr[31:28]==4'ha)&&lsu_en&&rw_valid_i);
 
 wire [63:0]                 rs1;
 wire [63:0]                 rs2;
@@ -82,31 +85,29 @@ assign      mr = rs1 + imm;
 
 assign      dcache_write_data   = rs2;
 assign      dcache_addr         = rs1 + imm;
-assign      dcache_read         = lsu_en&&(!lsu_w);
-assign      dcache_write        = lsu_en&&lsu_w; 
+assign      dcache_read         = lsu_en&&(!lsu_w)&&(dcache_addr[31:28]==4'h8);
+assign      dcache_write        = lsu_en&&lsu_w&&(dcache_addr[31:28]==4'h8); 
 assign      dcache_write_len    = func3[1:0];
 
 
-reg                 rd_w_r;
-assign rd_w_o = rd_w_r&&valid_r;
-reg                 valid_r;
+wire                    rd_w_wire;
+assign rd_w_wire =      rd_w&&(dcache_valid||rw_valid_i);
 
-always@(posedge clk)begin
-    if(!rst_n)begin
-        valid_r <= 1'b0;
-    end
-    else begin
-        valid_r <= dcache_valid;
-    end
-end
+
+assign rw_valid_o = lsu_en&&(dcache_addr[31:28]==4'ha);
+assign rw_write_o = lsu_en&&(dcache_addr[31:28]==4'ha)&&lsu_w;
+assign rw_w_data_i= rs2[31:0];
+assign rw_addr_i = dcache_addr;
+assign rw_size_i =4'b011;
+
 
     always@(posedge clk)begin
         if(!rst_n)begin
-            rd_w_r      <= 1'b0;
+            rd_w_o      <= 1'b0;
         end
-        else if(pipe3_allowin)begin
-            rd_w_r      <= rd_w&&lsu_en;
+        else if(1'b1)begin
             rd_addr_o   <= rdr;
+            rd_w_o      <= rd_w_wire&&lsu_en;
         end
     end
 
@@ -124,11 +125,26 @@ always@(posedge clk)begin
     end
 end
 
+reg rd_sel1;
+always@(posedge clk)begin
+    if(!rst_n)begin
+        rd_sel1 <= 1'b1;
+    end
+    else begin
+        rd_sel1 <= (dcache_addr[31:28]==4'hA);
+    end
+
+end
+
+wire [63:0] load_ext_in = rd_sel1?{32'b0,data_read_i}:dcache_read_data;
+
 load_ext load_ext1(
-     .mrd(dcache_read_data)
+     .mrd(load_ext_in)
     ,.rd(rd_o)
     ,.func3(func3_r)
 );
+
+
 
 
 mem mem1(
@@ -140,7 +156,7 @@ mem mem1(
     ,.inst_addr(inst_addr)
 
     ,.r_addr(mr)
-    ,.r_data(mem_read_data)
+    ,.r_data()
 
     ,.w_width(w_width)
     ,.w_addr(mr)
@@ -149,7 +165,7 @@ mem mem1(
 
     ,.skip_ref(skip_ref)
 );
-
+/*
 uart u1(
     .clk(clk)
     ,.rst_n(rst_n)
@@ -163,6 +179,19 @@ uart u1(
     ,.get(uart_get)
 
 
-);
+);*/
+
+/*
+reg                     valid_r;
+
+always@(posedge clk)begin
+    if(!rst_n)begin
+        valid_r <= 1'b0;
+    end
+    else begin
+        valid_r <= dcache_valid;
+    end
+end*/
+
 
 endmodule

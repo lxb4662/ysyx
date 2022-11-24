@@ -2,29 +2,23 @@ module exu_stage(
     input           clk,
     input           rst_n,
 
+
+    input           exu_en,
+    input [4:0]     rd_addr,
+    input           rd_w_en,
+    input [6:0]     alu_op,
+
     input [2:0]     func3,
     input [6:0]     func7,
 
     input           rs1_sel,
     input           rs2_sel,
 
-    input           i_alu,
-    input           ii_alu,
-    input           ir_alu,
-    input           w_alu,
-    input           wi_alu,
-    input           wr_alu,
-    input           m_alu,
-    input           mw_alu,
-
     input           jal,
     input           jalr,
     input           bxx,
     input           lui,
     input           auipc,
-    input           sub_sra,
-
-    input           w_type,
 
     input [63:0]    pc,
     input [63:0]    rs1_reg,
@@ -34,30 +28,26 @@ module exu_stage(
     
 
 
-    input [6:0]     alu_op,
-    input [4:0]     rd_addr,
-    input           exu_en,
-    input           rd_w_en,
     input           alu_in1_sel,
     input           alu_in2_sel,
 
 
-    output           jup,
-    output  [63:0]   jup_addr,
+    output                  jup,
+    output  [63:0]          jup_addr,
 
-    output reg [63:0]   rd_o,
-    output wire [63:0]  rd_wire,
-    output reg [4:0]    rd_addr_o,
-    output reg          rd_w_o ,
-    output reg          valid,
+    output reg  [63:0]      rd_o,
+    output reg  [4:0]       rd_addr_o,
+    output reg              rd_w_o ,
+    //output reg              valid_o,
 
-    output              pipe3_allowin
+    output                  pipe3_allowin
 
 );
 
 wire [63:0]     rs1;
 wire [63:0]     rs2;
-assign pipe3_allowin = 1'b1;
+assign pipe3_allowin = alu_f_ready;
+wire [63:0]   rd_wire;
 
 mux2t1_64 rs1_sel_mux(
     .sel(rs1_sel)
@@ -81,29 +71,38 @@ always@(posedge clk )begin
         //jup             <= 1'b0;
     end
     else begin
-        valid <= exu_en;
         if(pipe3_allowin)begin
             rd_o        <= rd_wire;
-            rd_w_o      <= rd_w_en&&exu_en;
+            rd_w_o      <= rd_w_en&&exu_en&&alu_f_valid;
             rd_addr_o   <= rd_addr;
 
         end
     end
 
 end
+/*
+always@(posedge clk)begin
+    if(!rst_n)begin
+        valid_o <= 1'b0;
+    end
+    else begin
+        valid_o <= alu_f_valid|(pipe3_allowin&&(auipc|jal|jalr|bxx|lui));
+    end
+end
 
-
+*/
 assign    jup         = (jal|jalr|(bxx &( b_ans==64'b1)))&&pipe3_allowin&&exu_en;
 assign    jup_addr    = jp_addr_wire;
 
-reg  [63:0]     alu_out_w;
-wire [63:0]     alu_in1_w;
-wire [63:0]     alu_in2_w;
-wire [63:0]     alu_in1_w1;
-wire [63:0]     alu_in2_w1;
-reg  [63:0]     rd_sel1_wire;
-reg  [63:0]     rd_sel2_wire;
-reg  [63:0]     rd_sel3_wire;
+reg   [63:0]     alu_out_w;
+wire  [63:0]     alu_in1_w;
+wire  [63:0]     alu_in2_w;
+wire  [63:0]     alu_in1_w1;
+wire  [63:0]     alu_in2_w1;
+
+wire  [63:0]     rd_sel1_wire;
+wire  [63:0]     rd_sel2_wire;
+wire  [63:0]     rd_sel3_wire;
 
 mux2t1_64 aluin1sel (
     .sel (alu_in1_sel   ),
@@ -145,21 +144,28 @@ wire [3:0]     sel_w;
 wire [3:0]     sel_mw;
 
 wire [63:0]     alu_f_out;
-
+wire            alu_f_valid;
+wire            alu_f_ready;
 alu_fusion aluf(
-    .in0(alu_in1_w1)
+     .clk(clk)
+    ,.rst_n(rst_n)
+    ,.in0(alu_in1_w1)
     ,.in1(alu_in2_w1)
     ,.alu_op(alu_op)
-
+    ,.en(alu_op[4:3]==2'b11)
+    ,.valid(alu_f_valid)
+    ,.ready(alu_f_ready)
     ,.out(alu_f_out)
 );
-wire [1:0]  alu_f_out_sel;
 
+/*
+
+
+wire [1:0]  alu_f_out_sel;
 encode4_2 alu_sel_enco(
     .in0({mw_alu,w_alu,m_alu,i_alu}),
     .out0(alu_f_out_sel)
 );
-
 mux4t1_64 aluf_out_sel(
     .sel(alu_f_out_sel),
     .in0(out_i),
@@ -168,7 +174,7 @@ mux4t1_64 aluf_out_sel(
     .in3(out_mw),
     .out()
 );
-
+*/
 
 
 mux2t1_64 rdsel1 (
@@ -216,7 +222,7 @@ always@(*)begin
 end
 */
 
-
+/*
 wire [63:0]             eq;
 wire [63:0]             neq;
 wire [63:0]             slt;
@@ -234,7 +240,7 @@ comparator com1(
     ,.uslt(uslt)
     ,.usnlt(usnlt)
 
-);
+);*/
 
 wire [63:0]             eq_b;
 wire [63:0]             neq_b;
@@ -258,13 +264,13 @@ comparator com_bxx(
 reg [63:0]     b_ans;
 always@(*)begin
     case(func3)
-    3'b000: b_ans <= eq_b;
-    3'b001: b_ans <= neq_b;
-    3'b100: b_ans <= slt_b;
-    3'b101: b_ans <= snlt_b;
-    3'b110: b_ans <= uslt_b;
-    3'b111: b_ans <= usnlt_b;
-    default:b_ans <= 63'b0; 
+    3'b000: b_ans = eq_b;
+    3'b001: b_ans = neq_b;
+    3'b100: b_ans = slt_b;
+    3'b101: b_ans = snlt_b;
+    3'b110: b_ans = uslt_b;
+    3'b111: b_ans = usnlt_b;
+    default:b_ans = 64'b0; 
     endcase 
 end
 

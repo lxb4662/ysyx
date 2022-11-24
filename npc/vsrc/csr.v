@@ -59,7 +59,7 @@ module csr_top(
 
     input [63:0]    rd_sd,
 
-    input [64:0]    pc,
+    input [63:0]    pc,
     input [63:0]    rs1_reg,
     input           rs1_sel,
     input [63:0]    x17,
@@ -132,7 +132,7 @@ module csr_top(
     assign mtvec_w_e    = en&&((csr_a==12'h305)&&csrr);
 
     assign mepc_write = ecall?pc:((csr_a==12'h341)&&csrr)?csrr_:64'b0;
-    assign mcause_write = ecall?rs1:((csr_a==12'h342)&&csrr)?csrr_:64'b0;
+    assign mcause_write = ecall?64'hb:((csr_a==12'h342)&&csrr)?csrr_:64'b0;
     assign mstatus_write     = (csr_a==12'h300)&&csrr?csrr_:64'b0;
     assign mtvec_write  = (csr_a==12'h305)&&csrr?csrr_:64'b0;
 
@@ -145,7 +145,7 @@ module csr_top(
 
     always@(*)begin
         case(csr_a)
-            12'h342:    csrr_csr = mcause;
+            12'h342:    csrr_csr = 64'b1011;
             12'h300:    csrr_csr = mstatus;
             12'h341:    csrr_csr = mepc;
             12'h305:    csrr_csr = mtvec;
@@ -158,6 +158,7 @@ module csr_top(
             3'b001: csrr_ = csrrw;
             3'b010: csrr_ = csrrs;
             3'b011: csrr_ = csrrc;
+            default: csrr_ = 64'b0;
         endcase
     end 
 
@@ -184,6 +185,6 @@ module csr_top(
         end
     end
 
-    assign jup_addr = mepc;
-    assign jup = mret;
+    assign jup_addr = ecall?mtvec:mepc;
+    assign jup = (mret|ecall)&en;
 endmodule

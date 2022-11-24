@@ -278,19 +278,19 @@ end
 //
 always@(*)begin
     case(axi_3_r_id)
-    4'b0001: axi_0_r_valid = axi_3_r_data;
+    4'b0001: axi_0_r_valid = axi_3_r_valid;
     default: axi_0_r_valid = 1'b0;
     endcase
 end
 always@(*)begin
     case(axi_3_r_id)
-    4'b0010: axi_1_r_valid = axi_3_r_data;
+    4'b0010: axi_1_r_valid = axi_3_r_valid;
     default: axi_1_r_valid = 1'b0;
     endcase
 end
 always@(*)begin
     case(axi_3_r_id)
-    4'b0011: axi_2_r_valid = axi_3_r_data;
+    4'b0011: axi_2_r_valid = axi_3_r_valid;
     default: axi_2_r_valid = 1'b0;
     endcase
 end
@@ -308,19 +308,19 @@ end
 always@(*)begin
     case(axi_3_r_id)
     4'b0001: axi_0_r_id = axi_3_r_id;
-    default: axi_0_r_id = 3'b0;
+    default: axi_0_r_id = 4'b0;
     endcase
 end
 always@(*)begin
     case(axi_3_r_id)
     4'b0010: axi_1_r_id = axi_3_r_id;
-    default: axi_1_r_id = 3'b0;
+    default: axi_1_r_id = 4'b0;
     endcase
 end
 always@(*)begin
     case(axi_3_r_id)
     4'b0011: axi_2_r_id = axi_3_r_id;
-    default: axi_2_r_id = 3'b0;
+    default: axi_2_r_id = 4'b0;
     endcase
 end
 
@@ -387,7 +387,7 @@ always@(*)begin
 
 end
 always@(*)begin
-    case(ar_sel)
+    case(aw_sel)
         3'b100: axi_3_aw_valid = axi_0_aw_valid;
         3'b010: axi_3_aw_valid = axi_1_aw_valid;
         3'b001: axi_3_aw_valid = axi_2_aw_valid;
@@ -395,7 +395,7 @@ always@(*)begin
     endcase
 end
 always@(*)begin
-    case(ar_sel)
+    case(aw_sel)
         3'b100: axi_3_aw_id = axi_0_aw_id;
         3'b010: axi_3_aw_id = axi_1_aw_id;
         3'b001: axi_3_aw_id = axi_2_aw_id;
@@ -405,7 +405,7 @@ end
 
 
 always@(*)begin
-    case(ar_sel)
+    case(aw_sel)
         3'b100: axi_3_aw_brust = axi_0_aw_brust;
         3'b010: axi_3_aw_brust = axi_1_aw_brust;
         3'b001: axi_3_aw_brust = axi_2_aw_brust;
@@ -415,7 +415,7 @@ end
 
 
 always@(*)begin
-    case(ar_sel)
+    case(aw_sel)
         3'b100: axi_3_aw_len = axi_0_aw_len;
         3'b010: axi_3_aw_len = axi_1_aw_len;
         3'b001: axi_3_aw_len = axi_2_aw_len;
@@ -425,7 +425,7 @@ end
 
 
 always@(*)begin
-    case(ar_sel)
+    case(aw_sel)
         3'b100: axi_3_aw_size = axi_0_aw_size;
         3'b010: axi_3_aw_size = axi_1_aw_size;
         3'b001: axi_3_aw_size = axi_2_aw_size;
@@ -434,7 +434,7 @@ always@(*)begin
 end
 
 always@(*)begin
-    case(ar_sel)
+    case(aw_sel)
         3'b100: axi_3_aw_addr = axi_0_aw_addr;
         3'b010: axi_3_aw_addr = axi_1_aw_addr;
         3'b001: axi_3_aw_addr = axi_2_aw_addr;
@@ -444,19 +444,19 @@ end
 
 
 always@(*)begin
-    case(ar_sel)
+    case(aw_sel)
         3'b100: axi_0_aw_ready = axi_3_aw_ready;
         default: axi_0_aw_ready = 1'b0;
     endcase
 end
 always@(*)begin
-    case(ar_sel)
+    case(aw_sel)
         3'b010: axi_1_aw_ready = axi_3_aw_ready;
         default: axi_1_aw_ready = 1'b0;
     endcase
 end
 always@(*)begin
-    case(ar_sel)
+    case(aw_sel)
         3'b001: axi_2_aw_ready = axi_3_aw_ready;
         default: axi_2_aw_ready = 1'b0;
     endcase
@@ -513,19 +513,19 @@ always@(*)begin
 end
 
 always@(*)begin
-    case(ar_sel)
+    case(w_sel)
         3'b100: axi_0_w_ready = axi_3_w_ready;
         default: axi_0_w_ready = 1'b0;
     endcase
 end
 always@(*)begin
-    case(ar_sel)
+    case(w_sel)
         3'b010: axi_1_w_ready = axi_3_w_ready;
         default: axi_1_w_ready = 1'b0;
     endcase
 end
 always@(*)begin
-    case(ar_sel)
+    case(w_sel)
         3'b001: axi_2_w_ready = axi_3_w_ready;
         default: axi_2_w_ready = 1'b0;
     endcase
@@ -540,13 +540,13 @@ always@(*)begin
     endcase
 end
 always@(*)begin
-    case(axi_3_r_id)
+    case(axi_3_b_id)
     4'b0010: axi_1_b_id = axi_3_b_id;
     default: axi_1_b_id = 4'b0;
     endcase
 end
 always@(*)begin
-    case(axi_3_r_id)
+    case(axi_3_b_id)
     4'b0011: axi_2_b_id = axi_3_b_id;
     default: axi_2_b_id = 4'b0;
     endcase
@@ -554,7 +554,7 @@ end
 
 // rready
 always@(*)begin
-    case(axi_3_r_id)
+    case(axi_3_b_id)
     4'b0001: axi_3_b_ready = axi_0_b_ready;
     4'b0010: axi_3_b_ready = axi_1_b_ready;
     4'b0011: axi_3_b_ready = axi_2_b_ready;
@@ -570,13 +570,13 @@ always@(*)begin
     endcase
 end
 always@(*)begin
-    case(axi_3_r_id)
+    case(axi_3_b_id)
     4'b0010: axi_1_b_valid = axi_3_b_valid;
     default: axi_1_b_valid = 1'b0;
     endcase
 end
 always@(*)begin
-    case(axi_3_r_id)
+    case(axi_3_b_id)
     4'b0011: axi_2_b_valid = axi_3_b_valid;
     default: axi_2_b_valid = 1'b0;
     endcase
@@ -586,19 +586,19 @@ end
 always@(*)begin
     case(axi_3_b_id)
     4'b0001: axi_0_b_resp = axi_3_b_resp;
-    default: axi_0_b_resp = 4'b0;
+    default: axi_0_b_resp = 2'b0;
     endcase
 end
 always@(*)begin
-    case(axi_3_r_id)
+    case(axi_3_b_id)
     4'b0010: axi_1_b_resp = axi_3_b_resp;
-    default: axi_1_b_resp = 4'b0;
+    default: axi_1_b_resp = 2'b0;
     endcase
 end
 always@(*)begin
-    case(axi_3_r_id)
+    case(axi_3_b_id)
     4'b0011: axi_2_b_resp = axi_3_b_resp;
-    default: axi_2_b_resp = 4'b0;
+    default: axi_2_b_resp = 2'b0;
     endcase
 end
 

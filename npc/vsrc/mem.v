@@ -1,6 +1,6 @@
-import "DPI-C" function longint mem_read (input longint a,input int len);
+//import "DPI-C" function longint mem_read (input longint a,input int len);
 //import "DPI-C" function longint mem_read_inst (input longint a,input int len);
-import "DPI-C" function int mem_write (input longint a,input int len,input longint data);
+//import "DPI-C" function int mem_write (input longint a,input int len,input longint data);
 import "DPI-C" function int mem_skip (input longint a);
 module mem(
     input clk,
@@ -23,21 +23,21 @@ module mem(
 
     //assign inst = mem_read_inst(inst_addr,4);
 
-    assign r_data = (en&&(!w_en))?mem_read(r_addr,8):64'b0;
+    //assign r_data = (en&&(!w_en))?mem_read(r_addr,8):64'b0;
 
 
     
 
     assign skip_ref = en&(mem_skip(w_en?w_addr:r_addr)==1);
 
-
+/*
     always@(posedge clk)begin
         if(w_en)begin
             mem_write(w_addr,w_width,w_data);
         end
     end
 
-
+*/
 
 
 endmodule 

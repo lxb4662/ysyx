@@ -61,7 +61,7 @@ module axi_rw # (
 
 	input                               rw_valid_i,         //IF&MEM输入信号
     input                               rw_write_i,
-	output reg                          rw_valid_o,         //IF&MEM输入信号
+	output                              rw_valid_o,         //IF&MEM输入信号
     output reg [RW_DATA_WIDTH-1:0]      data_read_o,        //IF&MEM输入信号
     input                               data_ready_to_read,
     input  [RW_DATA_WIDTH-1:0]          rw_w_data_i,        //IF&MEM输入信号
@@ -131,9 +131,9 @@ module axi_rw # (
     always@(*)begin
         case(write_fsm)
             3'b000: write_fsm_next = (rw_valid_i&rw_write_i)?3'b001:3'b000;
-            3'b001: write_fsm_next = (axi_aw_ready_i)?3'b010:3'b001;
-            3'b010: write_fsm_next = (axi_w_ready_i)?3'b000:3'b010;
-            //3'b011: 
+            3'b001: write_fsm_next = (axi_aw_ready_i&axi_w_ready_i)?3'b011:3'b001;
+            3'b010: write_fsm_next = (axi_b_valid_i)?3'b000:3'b010;
+            3'b011: write_fsm_next = 3'b000;
             default:write_fsm_next = 3'b000;
         endcase
     end
@@ -157,7 +157,8 @@ module axi_rw # (
         case(read_fsm)
             3'b000: read_fsm_next = (rw_valid_i&(!rw_write_i))?3'b001:3'b000;
             3'b001: read_fsm_next = axi_ar_ready_i?3'b010:3'b001;
-            3'b010: read_fsm_next = axi_r_valid_i?3'b000:3'b001;
+            3'b010: read_fsm_next = axi_r_valid_i?3'b011:3'b001;
+            3'b011: read_fsm_next = 3'b000;
             default :read_fsm_next = 3'b000;
         endcase
     end    
@@ -173,7 +174,7 @@ module axi_rw # (
 
     // ------------------Write Transaction------------------
     parameter AXI_SIZE      = $clog2(AXI_DATA_WIDTH / 8);
-    wire [AXI_ID_WIDTH-1:0] axi_id              = {AXI_ID_WIDTH{1'b0}};
+    wire [AXI_ID_WIDTH-1:0] axi_id              = {4'b10};
     wire [AXI_USER_WIDTH-1:0] axi_user          = {AXI_USER_WIDTH{1'b0}};
     wire [7:0] axi_len      =  8'b0 ;
     wire [2:0] axi_size     = AXI_SIZE[2:0];
@@ -192,9 +193,9 @@ module axi_rw # (
     assign axi_aw_burst_o   = `AXI_BURST_TYPE_INCR;                                                             
 
     // 写数据通道
-    assign axi_w_valid_o    = write_fsm == 3'b010;
+    assign axi_w_valid_o    = write_fsm == 3'b001;
     assign axi_w_data_o     = rw_w_data_i ;
-    assign axi_w_strb_o     = rw_size_i;
+    assign axi_w_strb_o     = rw_size_i[3:0];
     assign axi_w_last_o     = 1'b1;
     assign axi_w_user_o     = axi_user;                                                                         //初始化信号即可
 
@@ -217,24 +218,25 @@ module axi_rw # (
     assign axi_ar_burst_o   = `AXI_BURST_TYPE_INCR;
 
     // Read data channel signals
-    assign axi_r_ready_o    = (read_fsm == 4'b010);
+    assign axi_r_ready_o    = (read_fsm == 3'b010);
 
 
     //mem_bus_out
 
+assign   rw_valid_o = axi_b_valid_i ||axi_r_valid_i;
+
+
     always@(posedge clk)begin
         if(!rst_n)begin
-            rw_valid_o <= 1'b0;
+            
         end
         else begin
-            if((read_fsm==3'b010)&axi_r_valid_i)begin
-                rw_valid_o <= 1'b1;
+            if((read_fsm==3'b010)&axi_r_valid_i||axi_w_ready_i&&axi_aw_ready_i)begin
+                //rw_valid_o <= 1'b1;
                 data_read_o <= axi_r_data_i;
             end
             else begin
-                if(data_ready_to_read)begin
-                    rw_valid_o  <=1'b0;
-                end
+                //rw_valid_o <= 1'b0;
             end
         end
     end

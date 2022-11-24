@@ -8,6 +8,8 @@ module inst_decode (
 
 
   output      [4:0]             rs1_addr,
+  output                        alu_in1_sel,
+  output                        alu_in2_sel,
   output      [4:0]             rs2_addr,
   output      [63:0]            imm_exted,
 
@@ -35,7 +37,7 @@ module inst_decode (
   output                        ecall,
   output    [11:0]              csr_addr,
   output pri_exu_en,
-
+/*
   output                        i_alu,
   output                        ii_alu,
   output                        ir_alu,
@@ -44,7 +46,7 @@ module inst_decode (
   output                        wi_alu,
   output                        wr_alu,
   output                        mw_alu,
-
+*/
   output                        exu_en,
   output      [6:0]             alu_op,
 
@@ -98,7 +100,7 @@ module inst_decode (
 
 
 
-
+/*
   assign ii_alu = (opcode==7'b0010011);
   assign ir_alu = (opcode==7'b0110011)&&((func7==7'b0)||(func7==7'b0100000));
   assign i_alu = ir_alu|ii_alu;
@@ -119,7 +121,7 @@ module inst_decode (
 
   assign alu_in0_from_rs0 = i_alu|m_alu|w_alu|mw_alu;
   assign alu_in1_from_rs1 = ir_alu|m_alu|wr_alu|mw_alu;
-
+*/
   //assign exu_o_sel = (i_type|r_type|)
 
   imm_decode imm_decode(
@@ -132,6 +134,9 @@ module inst_decode (
     .out(imm_exted)
   );
 
+
+  assign alu_in1_sel = jal_type|b_type;
+  assign alu_in2_sel = (opcode==7'b0010011)|(opcode ==7'b0011011)|jalr_type|jal_type|b_type;
 
   assign ecall  = (32'b00000000000000000000000001110011==inst)?1'b1:1'b0;
   assign ebreak = (32'b00000000000100000000000001110011==inst)?1'b1:1'b0;
@@ -151,7 +156,7 @@ module inst_decode (
   assign sub = (func3==3'b000)&(func7==7'b0100000)&(opcode==7'b0110011) | (func3==3'b0)&(func7==7'b0100000)&(opcode==7'b0111011) ;
   
   wire sra;
-  assign sra = (func3==3'b101)&(func7==7'b0100000)&((opcode==7'b0110011) | (opcode==7'b0111011)  | (opcode==7'b0010011)  | (opcode==7'b0011011) );
+  assign sra = (func3==3'b101)&(func7[6:1]==6'b010000)&((opcode==7'b0110011) | (opcode==7'b0111011)  | (opcode==7'b0010011)  | (opcode==7'b0011011) );
   wire m;
   wire m_w;
   assign m_w = (func7==7'b1)&(opcode==7'b0111011);

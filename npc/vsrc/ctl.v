@@ -5,6 +5,7 @@ module ctl(
     input                       jup,
     input [63:0]                jup_addr,
     input                       ivalid,
+    input                       pipe2_allowin,
     input                       dstall,
     output reg [3:0]            stall,
     output                      jup_o,
@@ -32,8 +33,8 @@ module ctl(
 
     always@(*)begin
         case(fsm)
-            3'b000: fsm_next = jup?3'b001:(4'b000);
-            3'b001: fsm_next = ivalid?3'b000:3'b001;
+            3'b000: fsm_next = jup?3'b001:(3'b000);
+            3'b001: fsm_next = (ivalid&pipe2_allowin)?3'b000:3'b001;
             3'b010: fsm_next = (!dstall)?3'b000:3'b010;
             default: fsm_next = 3'b000;
         endcase

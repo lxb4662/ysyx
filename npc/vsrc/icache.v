@@ -14,10 +14,10 @@ module icache(
     output                  arst_n,
 
     output                  wavalid,
-    output reg  [31:0]      waaddr,
+    output reg  [63:0]      waaddr,
     input                   waready,
     
-    output [31:0]           wdata,
+    output reg [31:0]       wdata,
     input                   wready,
     output                  wvalid,
 
@@ -27,7 +27,7 @@ module icache(
 
 
     output                  ravalid,
-    output reg  [31:0]      raaddr,
+    output reg  [63:0]      raaddr,
     input                   raready,
 
     input                   rvalid,
@@ -35,6 +35,8 @@ module icache(
     output                  rready
 
 );
+
+assign bready = 1'b1;
 
 assign aclk = clk;
 assign arst_n = 1'b1;
@@ -97,7 +99,7 @@ always@(posedge clk)begin
         tag_ar <= 53'b0;
     end
     else begin
-        if(status ==5'b0)begin
+        if((status ==5'b0)&miss)begin
         index_ar <= index_a;
         tag_ar <= tag_a;
         end
@@ -121,39 +123,39 @@ always@(*)begin
     case(status)
         5'b0:begin
                 case({dirty,miss})
-                    2'b00: next_status <= 5'b0;
-                    2'b01: next_status <= (read||write)?5'b10000:5'b0;
-                    2'b10: next_status <= 5'b0;
-                    2'b11: next_status <= read?5'b01000:5'b00000;
-                    default : next_status <= 5'b0;
+                    2'b00: next_status = 5'b0;
+                    2'b01: next_status = (read||write)?5'b10000:5'b0;
+                    2'b10: next_status = 5'b0;
+                    2'b11: next_status = (read||write)?5'b01000:5'b0;
+                    default : next_status = 5'b0;
                 endcase
             end
-        5'b1000: next_status <= waready?5'b1001:status;
-        5'b1001: next_status <= waready?5'b1010:status;
-        5'b1010: next_status <= waready?5'b1011:status;
-        5'b1011: next_status <= waready?5'b1100:status;
-        5'b1100: next_status <= waready?5'b0000:status;
+        5'b1000: next_status = waready?5'b1001:status;
+        5'b1001: next_status = waready?5'b1010:status;
+        5'b1010: next_status = waready?5'b1011:status;
+        5'b1011: next_status = waready?5'b1100:status;
+        5'b1100: next_status = (write_fsm==4'b0)?5'b0000:status;
        
         
-        5'b10000: next_status <= raready?5'b10001:status;
-        5'b10001: next_status <= raready?5'b10010:status;
-        5'b10010: next_status <= raready?5'b10011:status;
-        5'b10011: next_status <= raready?5'b10100:status;
-        5'b10100: next_status <= raready?5'b00000:status;
-        default : next_status <= 5'b0;
+        5'b10000: next_status = raready?5'b10001:status;
+        5'b10001: next_status = raready?5'b10010:status;
+        5'b10010: next_status = raready?5'b10011:status;
+        5'b10011: next_status = raready?5'b10100:status;
+        5'b10100: next_status = (read_fsm==4'b0)?5'b00000:status;
+        default : next_status = 5'b0;
     endcase
 end
 
 
 assign wavalid = (status==5'b1000)|(status==5'b1001)|(status==5'b1010)|(status==5'b1011);
-assign wvalid = (status==5'b1000)|(status==5'b1001)|(status==5'b1010)|(status==5'b1011);
+assign wvalid = (write_fsm==4'b0001)|(write_fsm==4'b0010)|(write_fsm==4'b011)|(write_fsm==4'b100);
 
 always@(*)begin
     case(status)
-    5'b1000:    waaddr = {tag_a,index_a,4'b0000};
-    5'b1001:    waaddr = {tag_a,index_a,4'b0100};
-    5'b1010:    waaddr = {tag_a,index_a,4'b1000};
-    5'b1011:    waaddr = {tag_a,index_a,4'b1100};
+    5'b1000:    waaddr = {tag_arry_data_out_miss[52:0],index_a,4'b0000};
+    5'b1001:    waaddr = {tag_arry_data_out_miss[52:0],index_a,4'b0100};
+    5'b1010:    waaddr = {tag_arry_data_out_miss[52:0],index_a,4'b1000};
+    5'b1011:    waaddr = {tag_arry_data_out_miss[52:0],index_a,4'b1100};
     default:    waaddr = 64'b0;
     endcase
 end
@@ -171,11 +173,11 @@ end
 
 always@(*)begin
     case(write_fsm)
-        4'b0000:    write_fsm_next =  (status==5'b1001)?4'b1:4'b0;
-        4'b0001:    write_fsm_next = wvalid?4'b0010:write_fsm;
-        4'b0010:    write_fsm_next = wvalid?4'b0011:write_fsm;
-        4'b0011:    write_fsm_next = wvalid?4'b0100:write_fsm;
-        4'b0100:    write_fsm_next = wvalid?4'b0000:write_fsm;
+        4'b0000:    write_fsm_next =  (status==5'b1000)?4'b1:4'b0;
+        4'b0001:    write_fsm_next = wready?4'b0010:write_fsm;
+        4'b0010:    write_fsm_next = wready?4'b0011:write_fsm;
+        4'b0011:    write_fsm_next = wready?4'b0100:write_fsm;
+        4'b0100:    write_fsm_next = wready?4'b0000:write_fsm;
         default: write_fsm_next = 4'b0;
     endcase
 end
@@ -209,8 +211,8 @@ assign ravalid = (status==5'b10000)|(status==5'b10001)|(status==5'b10010)|(statu
 
 //assign rready = (read_fsm == 4'b1)|(read_fsm == 4'b10)|(read_fsm == 4'b11)|(read_fsm == 4'b100);
 assign rready = 1'b1;
-reg [4:0]   read_fsm;
-reg [4:0]   read_fsm_next;
+reg [3:0]   read_fsm;
+reg [3:0]   read_fsm_next;
 
 always@(posedge clk)begin
     if(!rst_n)begin
@@ -228,6 +230,7 @@ always@(*)begin
         4'b0010:    read_fsm_next = rvalid?4'b011:read_fsm;
         4'b0011:    read_fsm_next = rvalid?4'b100:read_fsm;
         4'b0100:    read_fsm_next = rvalid?4'b000:read_fsm;
+        default:    read_fsm_next = 4'b0000;
     endcase
 end
 
@@ -267,26 +270,31 @@ assign hit      = hit0|hit1;
 assign miss = !((hit1)|(hit0));
 assign dirty    = miss&((random?tag_arry_data_out_1[54]:tag_arry_data_out_0[54]));
 
-wire [7:0]tag_arry_addr;
+wire [6:0]tag_arry_addr;
 wire [54:0]   tag_arry_data_in;
 wire tag_arry_en;
 wire [54:0] tag_arry_data_out_hit;
-assign  tag_arry_data_out_hit = hit1?tag_arry_data_out_1[index_a]:tag_arry_data_out_0[index_a];
+assign  tag_arry_data_out_hit = hit1?tag_arry_data_out_1:tag_arry_data_out_0;
 wire [54:0] tag_arry_data_out_miss;
-assign  tag_arry_data_out_miss = random?tag_arry_data_out_1[index_a]:tag_arry_data_out_0[index_a];
+assign  tag_arry_data_out_miss = random?tag_arry_data_out_1:tag_arry_data_out_0;
 
-assign tag_arry_addr = ((status==5'b0)&write)?{1'b0,index_a}:((status==5'b0)&read)?{1'b0,index_a}:(((write_fsm==4'b0011)|(read_fsm==4'b0100))?{random,index_ar}:8'b0);
-assign tag_arry_en =((status==5'b0)&write)|((write_fsm==4'b0011)&wvalid)|((read_fsm==4'b0100)&rvalid);
-assign tag_arry_data_in =((status==5'b0)&write)?{1'b1,tag_arry_data_out_hit[53:0]}:((write_fsm==4'b0100)&wvalid)?{1'b0,tag_arry_data_out_miss[53:0]}:(read_fsm==4'b0100)?{2'b01,tag_ar}:55'b0;
+assign tag_arry_addr = (status==5'b0)?index_a:index_ar;
+
+ wire tag_arry_sel;
+
+assign tag_arry_sel = hit?hit1:random;
+
+assign tag_arry_en =((status==5'b0)&write&&hit)|((write_fsm==4'b0100)&wready)|((read_fsm==4'b0100)&rvalid);
+assign tag_arry_data_in =((status==5'b0)&write)?{1'b1,tag_arry_data_out_hit[53:0]}:((write_fsm==4'b0100))?{1'b0,tag_arry_data_out_miss[53:0]}:(read_fsm==4'b0100)?{2'b01,tag_ar}:55'b0;
 
 wire [54:0]tag_arry_data_out_0;
 wire [54:0]tag_arry_data_out_1;
-tag_arry tag_arry_0(.clk(clk),.rst_n(rst_n),.en(tag_arry_en&!tag_arry_addr[7]),.addr(tag_arry_addr[6:0]),.data_in(tag_arry_data_in),.data_out(tag_arry_data_out_0));
+tag_arry tag_arry_0(.clk(clk),.rst_n(rst_n),.en(tag_arry_en&!tag_arry_sel),.addr(tag_arry_addr),.data_in(tag_arry_data_in),.data_out(tag_arry_data_out_0));
 tag_arry tag_arry_1(
  .clk(clk)
 ,.rst_n(rst_n)
-,.en(tag_arry_en&tag_arry_addr[7])
-,.addr(tag_arry_addr[6:0])
+,.en(tag_arry_en&tag_arry_sel)
+,.addr(tag_arry_addr)
 ,.data_in(tag_arry_data_in)
 ,.data_out(tag_arry_data_out_1));
 
@@ -320,11 +328,12 @@ always@(posedge clk)begin
 end
 
 always@(*)begin
-    case (cache_addr_r[7:6])
+    case (cache_addr_r)
         2'b00:  begin   cache_out = Q[0];    end
         2'b01:  begin   cache_out = Q[1];    end
         2'b10:  begin   cache_out = Q[2];    end
         2'b11:  begin   cache_out = Q[3];    end
+        default: cache_out = 128'b0;
     endcase
 end
 always@(*)begin
@@ -340,7 +349,7 @@ end
 assign cache_addr = (status==5'b0)?(hit?{hit1,index_a}:{random,index_a}):(hit?{hit1,index_ar}:{random,index_ar});
 assign cache_cen = 1'b0;
 assign cache_wen = !(((status==5'b0)&write&hit)|((read_fsm==4'b100)&rvalid));
-assign cache_in = ((status==5'b0)&write)?write_shift:((read_fsm==5'b100)&rvalid)?{rdata,read_line}:128'b0;
+assign cache_in = ((status==5'b0)&write)?write_shift:((read_fsm==4'b100)&rvalid)?{rdata,read_line}:128'b0;
 assign cache_bwen = ((status==5'b0)&write)?cache_write_bwen:128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 reg [127:0] cache_write_bwen ;
 
@@ -396,22 +405,23 @@ end
 
 always@(*)begin
     case (addr_r)
-        4'b0000 : read_shift = cache_out ;
-        4'b0001 : read_shift = cache_out >> 8;
-        4'b0010 : read_shift = cache_out >> 16;
-        4'b0011 : read_shift = cache_out >> 24;
-        4'b0100 : read_shift = cache_out >> 32;
-        4'b0101 : read_shift = cache_out >> 40;
-        4'b0110 : read_shift = cache_out >> 48;
-        4'b0111 : read_shift = cache_out >> 56;
-        4'b1000 : read_shift = cache_out >> 64;
-        4'b1001 : read_shift = cache_out >> 72;
-        4'b1010 : read_shift = cache_out >> 80;
-        4'b1011 : read_shift = cache_out >> 88;
-        4'b1100 : read_shift = cache_out >> 96;
-        4'b1101 : read_shift = cache_out >> 104;
-        4'b1110 : read_shift = cache_out >> 112;
-        4'b1111 : read_shift = cache_out >> 120;
+        4'b0000 : read_shift = cache_out[63:0];
+        4'b0001 : read_shift = cache_out[71:8];
+        4'b0010 : read_shift = cache_out[79:16];
+        4'b0011 : read_shift = cache_out[87:24];
+        4'b0100 : read_shift = cache_out[95:32];
+        4'b0101 : read_shift = cache_out[103:40];
+        4'b0110 : read_shift = cache_out[111:48];
+        4'b0111 : read_shift = cache_out[119:56];
+        4'b1000 : read_shift = cache_out[127:64];
+        4'b1001 : read_shift = {8'b0,cache_out[127:72]};
+        4'b1010 : read_shift = {16'b0,cache_out[127:80]};
+        4'b1011 : read_shift = {24'b0,cache_out[127:88]};
+        4'b1100 : read_shift = {32'b0,cache_out[127:96]};
+        4'b1101 : read_shift = {40'b0,cache_out[127:104]};
+        4'b1110 : read_shift = {48'b0,cache_out[127:112]};
+        4'b1111 : read_shift = {56'b0,cache_out[127:120]};
+        default: read_shift = 64'b0;
     endcase 
 end
  
@@ -420,25 +430,34 @@ end
 reg [127:0] write_shift;
 always@(*)begin
     case (addr[3:0])
-        4'b0000 : write_shift = data_in ;
-        4'b0001 : write_shift = data_in << 8;
-        4'b0010 : write_shift = data_in << 16;
-        4'b0011 : write_shift = data_in << 24;
-        4'b0100 : write_shift = data_in << 32;
-        4'b0101 : write_shift = data_in << 40;
-        4'b0110 : write_shift = data_in << 48;
-        4'b0111 : write_shift = data_in << 56;
-        4'b1000 : write_shift = data_in << 64;
-        4'b1001 : write_shift = data_in << 72;
-        4'b1010 : write_shift = data_in << 80;
-        4'b1011 : write_shift = data_in << 88;
-        4'b1100 : write_shift = data_in << 96;
-        4'b1101 : write_shift = data_in << 104;
-        4'b1110 : write_shift = data_in << 112;
-        4'b1111 : write_shift = data_in << 120;
+        4'b0000 : write_shift = {64'b0,data_in} ;
+        4'b0001 : write_shift = {56'b0,data_in[63:0],8'b0 };
+        4'b0010 : write_shift = {48'b0,data_in[63:0],16'b0 };
+        4'b0011 : write_shift = {40'b0,data_in[63:0],24'b0 };
+        4'b0100 : write_shift = {32'b0,data_in[63:0],32'b0 };
+        4'b0101 : write_shift = {24'b0,data_in[63:0],40'b0 };
+        4'b0110 : write_shift = {16'b0,data_in[63:0],48'b0 };
+        4'b0111 : write_shift = {8'b0,data_in[63:0],56'b0 };
+        4'b1000 : write_shift = {data_in[63:0],64'b0 };
+        4'b1001 : write_shift = {data_in[55:0],72'b0 };
+        4'b1010 : write_shift = {data_in[47:0],80'b0 };
+        4'b1011 : write_shift = {data_in[39:0],88'b0 };
+        4'b1100 : write_shift = {data_in[31:0],96'b0 };
+        4'b1101 : write_shift = {data_in[23:0],104'b0 };
+        4'b1110 : write_shift = {data_in[15:0],112'b0 };
+        4'b1111 : write_shift = {data_in[7:0],120'b0 };
+        default : write_shift = 128'b0;
     endcase 
 end
 
-
+    always@(*)begin
+        case(write_fsm)
+            4'b0001: wdata = cache_out[31:0];
+            4'b0010: wdata = cache_out[63:32];
+            4'b0011: wdata = cache_out[95:64];
+            4'b0100: wdata = cache_out[127:96];
+            default : wdata = 32'b0;
+        endcase 
+    end
  
 endmodule

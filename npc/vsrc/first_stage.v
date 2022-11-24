@@ -10,7 +10,7 @@ module first_stage(
     input                   hold_pipeline,
     output                  hold_pipeline_exu,
 
-
+    output                  pipe2_allowin,
     input                   pipe3_allowin,
 
     input                   jup,
@@ -28,7 +28,7 @@ module first_stage(
     output reg [63:0]       pc_out,
     output reg [63:0]       imm,
 
-    output reg [ 3:0]       func3,
+    output reg [ 2:0]       func3,
     output reg [ 6:0]       func7,
 
     output reg              bxx,
@@ -40,15 +40,7 @@ module first_stage(
     output reg              lui,
     output reg              auipc,
     output reg              w,
-    output reg              sub_sra,
-    output reg              i_alu,
-    output reg              ii_alu,
-    output reg              ir_alu,
-    output reg              m_alu,
-    output reg              w_alu,
-    output reg              wi_alu,
-    output reg              wr_alu,
-    output reg              mw_alu,
+
     output reg [63:0]       rd_o,
 
     
@@ -73,10 +65,10 @@ module first_stage(
     output reg [ 6:0]       alu_op, 
     output reg [ 4:0]       rd_addr,
     output reg              rd_w_en,
-
+/*
     output reg              rs1_sel,
     output reg              rs2_sel,
-
+*/
 
     output reg              lsu_w,
 
@@ -93,9 +85,9 @@ module first_stage(
 
 wire [63:0] next_pc;
 
-assign next_pc = (pipe2_allowin)?(jup==1'b1)?jup_addr:(ecall_o?mtvec_wire:64'd4+pc):pc;
+assign next_pc = (pipe2_allowin)?(jup==1'b1)?jup_addr:(64'd4+pc):pc;
 
-wire            pipe2_allowin;
+
 wire            pipe1_allowin;
 assign pipe1_allowin = pipe2_allowin;
 
@@ -139,7 +131,7 @@ always@(posedge clk)begin
             func3       <= func3_w;
             func7       <= func7_w;
             imm         <= imm_w;
-            sub_sra     <= sub_sra_wire;
+           
             jal         <= jal_type;
             jalr        <= jalr_type;
             bxx         <= b_type;
@@ -147,35 +139,26 @@ always@(posedge clk)begin
             auipc       <= auipc_w;
             w           <= w_type;
 
-            i_alu       <= i_alu_wire;
-            ii_alu      <= ii_alu_wire;
-            ir_alu      <= ir_alu_wire;
-            w_alu       <= w_alu_wire;
-            m_alu       <= m_alu_wire;
-            mw_alu      <= mw_alu_wire;
-
-
             rs1_addr    <= rs1_addr_w;
             rs2_addr    <= rs2_addr_w;
 
-            exu_en      <= exu_en_w&(!jup)&(!ecall_o)&valid_o;
-            lsu_en      <= lsu_en_w&(!jup)&(!ecall_o)&valid_o;
+            exu_en      <= exu_en_w&(!jup)&&valid_o;
+            lsu_en      <= lsu_en_w&(!jup)&&valid_o;
             alu_op      <= alu_opcode_w;
             rd_addr     <= rd_addr_w;
-            rd_w_en     <= rd_w_en_w&(!jup)&(!ecall_o);
-            alu_in1_sel <= jal_type|b_type;
-            alu_in2_sel <= i_type|jalr_type|jal_type|b_type|ii_alu_wire|wi_alu_wire;
-
+            rd_w_en     <= rd_w_en_w&(!jup);
+            alu_in1_sel <= alu_in1_sel_w;
+            alu_in2_sel <= alu_in2_sel_w;
+/*
             rs1_sel     <= rs1_sel_wire;
             rs2_sel     <= rs2_sel_wire;
-        
+ */
             lsu_w       <= s_type;
 
             csrr_o      <= csrr_wire;
-            rd_o        <= rd_wire;
 
             ecall_o     <= ecall_wire;
-            pri_exu_en  <= pri_exu_en_wire&(ivalid)&valid_o;;
+            pri_exu_en  <= pri_exu_en_wire&(!jup)&valid_o;
             csr_addr    <= csr_addr_wire;
             mret_o      <= mret_wire;
         end
@@ -187,7 +170,6 @@ wire [63:0]         rs2_reg_w;
 */
 wire [63:0]         rs1_w;
 wire [63:0]         rs2_w;
-wire [63:0]         rd_addr_w;
 
 wire [63:0]         wb_rd_wire;
 wire [ 4:0]         wb_rdr_wire;
@@ -225,18 +207,19 @@ wire                exu_en_w;
 wire                lsu_en_w;
 wire [6:0]          alu_opcode_w;
 
-wire                auipc_W;
+wire                auipc_w;
 wire                ebreak;
 wire                i_type;
 wire                r_type;
 wire                b_type;
 wire                w_type;
 wire                jal_type;
+wire                l_type;
 wire                jalr_type;
 wire                s_type;
 wire                lui_w;
 
-
+/*
 
 wire              i_alu_wire;
 wire              ii_alu_wire;
@@ -247,16 +230,20 @@ wire              wi_alu_wire;
 wire              wr_alu_wire;
 wire              mw_alu_wire;
 
-
+*/
 wire [2:0]          func3_w;
 wire [6:0]          func7_w;
 wire                sub_sra_wire;
 
-wire [63:0] csrr_wire;
+wire  csrr_wire;
 wire [11:0] csr_addr_wire;
 wire mret_wire;
 wire ecall_wire;
 wire pri_exu_en_wire;
+
+wire alu_in1_sel_w;
+wire alu_in2_sel_w;
+
 
 inst_decode decode(
   .inst(ir)
@@ -268,7 +255,6 @@ inst_decode decode(
 
  ,.lui(lui_w)
  ,.auipc(auipc_w)
- ,.sub_sra(sub_sra_wire)
 
  ,.rs1_addr(rs1_addr_w)
  ,.rs2_addr(rs2_addr_w)
@@ -280,6 +266,9 @@ inst_decode decode(
  ,.exu_en(exu_en_w)
  ,.lsu_en(lsu_en_w)
 
+ ,.alu_in1_sel(alu_in1_sel_w)
+ ,.alu_in2_sel(alu_in2_sel_w)
+
  ,.r_type(r_type)
  ,.i_type(i_type)
  ,.jal_type(jal_type)
@@ -289,6 +278,8 @@ inst_decode decode(
  ,.l_type(l_type)
  ,.w_type(w_type)
 
+
+/*
  ,.i_alu(i_alu_wire)
  ,.ii_alu(ii_alu_wire)
  ,.ir_alu(ir_alu_wire)
@@ -297,7 +288,7 @@ inst_decode decode(
  ,.wr_alu(wr_alu_wire)
  ,.m_alu(m_alu_wire)
  ,.mw_alu(mw_alu_wire)
-
+*/
  ,.ecall(ecall_wire)
  ,.csrr(csrr_wire)
  ,.mret(mret_wire)
@@ -310,19 +301,19 @@ inst_decode decode(
 
 // nei bu shu jv qian tui
 
-
-wire   [1:0]        rs1_sel_wire;
-wire   [1:0]        rs2_sel_wire;
+/*
+wire           rs1_sel_wire;
+wire           rs2_sel_wire;
 wire   [1:0]        rs1_sel_wire1;
 wire   [1:0]        rs2_sel_wire1;
 
+
+
+assign rs1_sel_wire = ((rs1_addr_w == rd_addr)&(rd_w_en))?1'b1:1'b0;
+assign rs2_sel_wire = ((rs2_addr_w == rd_addr)&(rd_w_en))?1'b1:1'b0;// (rs2_addr == rd_addr_o)?2'b1:((rs2_addr ==wb_rdr_wire)?2'b10:2'b0);
+
+*/
 wire [63:0]     rd_wire;
-
-assign rs1_sel_wire = ((rs1_addr_w == rd_addr)&(rd_w_en))?2'b1:1'b0;
-assign rs2_sel_wire = ((rs2_addr_w == rd_addr)&(rd_w_en))?2'b1:1'b0;// (rs2_addr == rd_addr_o)?2'b1:((rs2_addr ==wb_rdr_wire)?2'b10:2'b0);
-
-
-
 
 always@(posedge clk )begin
     if(valid_o&&ebreak &&(!jup))begin

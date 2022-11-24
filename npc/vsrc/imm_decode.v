@@ -17,7 +17,7 @@ module imm_decode (
 
   assign ext_imm_iljalr = {{52{imm_i_l_jalr[11]}},imm_i_l_jalr};
   assign ext_imm_s      = {{52{imm_s[11]}},imm_s};
-  assign ext_imm_b      = {(imm_b[11]==1'b0)?{52{1'b0}}:{52{1'b1}},imm_b,1'b0};
+  assign ext_imm_b      = {(imm_b[11]==1'b0)?{51{1'b0}}:{51{1'b1}},imm_b,1'b0};
   assign ext_imm_jal    = {(imm_jal[19]==1'b0)?{43{1'b0}}:{43{1'b1}},imm_jal,1'b0};
   assign ext_imm_u      = {(imm_u[19]==1'b0)?{32{1'b0}}:{32{1'b1}},imm_u,12'b0};
   assign ext_i_shamt    = {{58{1'b0}},ext_imm_iljalr[5:0]};

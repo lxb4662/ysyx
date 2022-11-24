@@ -9,7 +9,7 @@ module encode4_2(
             4'b0010: out0 = 2'd1;
             4'b0100: out0 = 2'd2;
             4'b1000: out0 = 2'd3;
-            default: out0 = 3'b0;
+            default: out0 = 2'b0;
         endcase
 
     end

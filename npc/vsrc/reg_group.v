@@ -24,7 +24,7 @@ module reg_group(
   always@(posedge clk )
   begin
     if(!rst_n)begin
-      regs[1'b0] <= 64'b0; 
+      regs[5'b0] <= 64'b0; 
     end
     else begin
       if(write_en==1'b1)
