@@ -28,69 +28,23 @@ VM_CLASSES_FAST += \
 	Vtop \
 	Vtop___024root \
 	Vtop___024root__1 \
-	Vtop___024root__2 \
-	Vtop___024root__3 \
-	Vtop___024root__4 \
-	Vtop___024root__5 \
-	Vtop___024root__6 \
-	Vtop___024root__7 \
-	Vtop___024root__8 \
-	Vtop___024root__9 \
-	Vtop___024root__10 \
-	Vtop___024root__11 \
-	Vtop___024root__12 \
 	Vtop___024unit \
 
 # Generated module classes, non-fast-path, compile with low/medium optimization
 VM_CLASSES_SLOW += \
 	Vtop__ConstPool_0 \
 	Vtop___024root__Slow \
-	Vtop___024root__1__Slow \
-	Vtop___024root__2__Slow \
-	Vtop___024root__3__Slow \
-	Vtop___024root__4__Slow \
-	Vtop___024root__5__Slow \
-	Vtop___024root__6__Slow \
-	Vtop___024root__7__Slow \
-	Vtop___024root__8__Slow \
-	Vtop___024root__9__Slow \
-	Vtop___024root__10__Slow \
-	Vtop___024root__11__Slow \
-	Vtop___024root__12__Slow \
 	Vtop___024unit__Slow \
 
 # Generated support classes, fast-path, compile with highest optimization
 VM_SUPPORT_FAST += \
 	Vtop__Dpi \
 	Vtop__Trace \
-	Vtop__Trace__1 \
-	Vtop__Trace__2 \
-	Vtop__Trace__3 \
-	Vtop__Trace__4 \
-	Vtop__Trace__5 \
-	Vtop__Trace__6 \
-	Vtop__Trace__7 \
-	Vtop__Trace__8 \
-	Vtop__Trace__9 \
-	Vtop__Trace__10 \
-	Vtop__Trace__11 \
 
 # Generated support classes, non-fast-path, compile with low/medium optimization
 VM_SUPPORT_SLOW += \
 	Vtop__Syms \
 	Vtop__Trace__Slow \
-	Vtop__Trace__1__Slow \
-	Vtop__Trace__2__Slow \
-	Vtop__Trace__3__Slow \
-	Vtop__Trace__4__Slow \
-	Vtop__Trace__5__Slow \
-	Vtop__Trace__6__Slow \
-	Vtop__Trace__7__Slow \
-	Vtop__Trace__8__Slow \
-	Vtop__Trace__9__Slow \
-	Vtop__Trace__10__Slow \
-	Vtop__Trace__11__Slow \
-	Vtop__Trace__12__Slow \
 
 # Global classes, need linked once per executable, fast-path, compile with highest optimization
 VM_GLOBAL_FAST += \

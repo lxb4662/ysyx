@@ -17,74 +17,10 @@ Vtop::Vtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , ira{vlSymsp->TOP.ira}
     , jup{vlSymsp->TOP.jup}
     , ecall{vlSymsp->TOP.ecall}
-    , uart_get{vlSymsp->TOP.uart_get}
-    , uart_en{vlSymsp->TOP.uart_en}
-    , uart_out{vlSymsp->TOP.uart_out}
     , stop_n{vlSymsp->TOP.stop_n}
     , skip{vlSymsp->TOP.skip}
     , pc_dut{vlSymsp->TOP.pc_dut}
-    , axi_0_clk{vlSymsp->TOP.axi_0_clk}
-    , axi_0_rst_n{vlSymsp->TOP.axi_0_rst_n}
-    , axi_0_ar_id{vlSymsp->TOP.axi_0_ar_id}
-    , axi_0_ar_brust{vlSymsp->TOP.axi_0_ar_brust}
-    , axi_0_ar_len{vlSymsp->TOP.axi_0_ar_len}
-    , axi_0_ar_size{vlSymsp->TOP.axi_0_ar_size}
-    , axi_0_ar_addr{vlSymsp->TOP.axi_0_ar_addr}
-    , axi_0_ar_valid{vlSymsp->TOP.axi_0_ar_valid}
-    , axi_0_ar_ready{vlSymsp->TOP.axi_0_ar_ready}
-    , axi_0_r_data{vlSymsp->TOP.axi_0_r_data}
-    , axi_0_r_valid{vlSymsp->TOP.axi_0_r_valid}
-    , axi_0_r_ready{vlSymsp->TOP.axi_0_r_ready}
-    , axi_0_r_id{vlSymsp->TOP.axi_0_r_id}
-    , axi_0_r_last{vlSymsp->TOP.axi_0_r_last}
-    , axi_0_r_resp{vlSymsp->TOP.axi_0_r_resp}
-    , axi_0_aw_addr{vlSymsp->TOP.axi_0_aw_addr}
-    , axi_0_aw_valid{vlSymsp->TOP.axi_0_aw_valid}
-    , axi_0_aw_ready{vlSymsp->TOP.axi_0_aw_ready}
-    , axi_0_aw_id{vlSymsp->TOP.axi_0_aw_id}
-    , axi_0_aw_brust{vlSymsp->TOP.axi_0_aw_brust}
-    , axi_0_aw_len{vlSymsp->TOP.axi_0_aw_len}
-    , axi_0_aw_size{vlSymsp->TOP.axi_0_aw_size}
-    , axi_0_w_data{vlSymsp->TOP.axi_0_w_data}
-    , axi_0_w_valid{vlSymsp->TOP.axi_0_w_valid}
-    , axi_0_w_ready{vlSymsp->TOP.axi_0_w_ready}
-    , axi_0_w_last{vlSymsp->TOP.axi_0_w_last}
-    , axi_0_w_strb{vlSymsp->TOP.axi_0_w_strb}
-    , axi_0_b_ready{vlSymsp->TOP.axi_0_b_ready}
-    , axi_0_b_valid{vlSymsp->TOP.axi_0_b_valid}
-    , axi_0_b_resp{vlSymsp->TOP.axi_0_b_resp}
-    , axi_0_b_id{vlSymsp->TOP.axi_0_b_id}
-    , axi_1_clk{vlSymsp->TOP.axi_1_clk}
-    , axi_1_rst_n{vlSymsp->TOP.axi_1_rst_n}
-    , axi_1_ar_id{vlSymsp->TOP.axi_1_ar_id}
-    , axi_1_ar_brust{vlSymsp->TOP.axi_1_ar_brust}
-    , axi_1_ar_len{vlSymsp->TOP.axi_1_ar_len}
-    , axi_1_ar_size{vlSymsp->TOP.axi_1_ar_size}
-    , axi_1_ar_addr{vlSymsp->TOP.axi_1_ar_addr}
-    , axi_1_ar_valid{vlSymsp->TOP.axi_1_ar_valid}
-    , axi_1_ar_ready{vlSymsp->TOP.axi_1_ar_ready}
-    , axi_1_r_data{vlSymsp->TOP.axi_1_r_data}
-    , axi_1_r_valid{vlSymsp->TOP.axi_1_r_valid}
-    , axi_1_r_ready{vlSymsp->TOP.axi_1_r_ready}
-    , axi_1_r_id{vlSymsp->TOP.axi_1_r_id}
-    , axi_1_r_last{vlSymsp->TOP.axi_1_r_last}
-    , axi_1_r_resp{vlSymsp->TOP.axi_1_r_resp}
-    , axi_1_aw_addr{vlSymsp->TOP.axi_1_aw_addr}
-    , axi_1_aw_valid{vlSymsp->TOP.axi_1_aw_valid}
-    , axi_1_aw_ready{vlSymsp->TOP.axi_1_aw_ready}
-    , axi_1_aw_id{vlSymsp->TOP.axi_1_aw_id}
-    , axi_1_aw_brust{vlSymsp->TOP.axi_1_aw_brust}
-    , axi_1_aw_len{vlSymsp->TOP.axi_1_aw_len}
-    , axi_1_aw_size{vlSymsp->TOP.axi_1_aw_size}
-    , axi_1_w_data{vlSymsp->TOP.axi_1_w_data}
-    , axi_1_w_valid{vlSymsp->TOP.axi_1_w_valid}
-    , axi_1_w_ready{vlSymsp->TOP.axi_1_w_ready}
-    , axi_1_w_last{vlSymsp->TOP.axi_1_w_last}
-    , axi_1_w_strb{vlSymsp->TOP.axi_1_w_strb}
-    , axi_1_b_ready{vlSymsp->TOP.axi_1_b_ready}
-    , axi_1_b_valid{vlSymsp->TOP.axi_1_b_valid}
-    , axi_1_b_resp{vlSymsp->TOP.axi_1_b_resp}
-    , axi_1_b_id{vlSymsp->TOP.axi_1_b_id}
+    , __pinNumber10{vlSymsp->TOP.__pinNumber10}
     , __PVT____024unit{vlSymsp->TOP.__PVT____024unit}
     , rootp{&(vlSymsp->TOP)}
 {

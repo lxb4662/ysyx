@@ -13,11 +13,11 @@ extern "C" {
 
 
     // DPI IMPORTS
-    // DPI import at /home/lixinbao/ysyx-workbench/npc/vsrc/mem.v:1:33
+    // DPI import at /home/lixinbao/ysyx-workbench/npc/vsrc/myip_full_v1_0_S00_AXI.v:1:33
     extern long long mem_read(long long a, int len);
     // DPI import at /home/lixinbao/ysyx-workbench/npc/vsrc/mem.v:4:29
     extern int mem_skip(long long a);
-    // DPI import at /home/lixinbao/ysyx-workbench/npc/vsrc/mem.v:3:29
+    // DPI import at /home/lixinbao/ysyx-workbench/npc/vsrc/myip_full_v1_0_S00_AXI.v:3:29
     extern int mem_write(long long a, int len, long long data);
     // DPI import at /home/lixinbao/ysyx-workbench/npc/vsrc/reg_group.v:1:30
     extern void reg_cpy(int adder, int a, int b);

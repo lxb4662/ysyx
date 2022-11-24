@@ -9,7 +9,7 @@ long int gettimeofday();
 
 
 
-
+/*
 int sys_write(int fd, void *buf, size_t count) {
   //printf("write\n");
   if(fd==1){
@@ -18,7 +18,7 @@ int sys_write(int fd, void *buf, size_t count) {
     }
   }
   return count;
-}
+}*/
 
 int sys_brk(int  addr){
   //sys_write(1,"sys brk",6);

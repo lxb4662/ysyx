@@ -23,10 +23,10 @@ static void __am_timer_config(AM_TIMER_CONFIG_T *cfg) { cfg->present = true; cfg
 static void __am_input_config(AM_INPUT_CONFIG_T *cfg) { cfg->present = true;  }
 void __am_gpu_init() {
   int i;
-  int w = inl(0xa0000100);  // TODO: get the correct width
-  int h = inl(0xa0000100)&0xffff;  // TODO: get the correct height
+  int w = inl(0xa0000100);  
+  int h = w&0xffff;  // TODO: get the correct height
 
-  printf("am gpu init w is : %d h is :%d\n",inl(0xa0000100)>>16,h);
+  printf("am gpu init w is : %d h is :%d\n",w>>16,h);
   uint32_t *fb = (uint32_t *)(uintptr_t)0xa1000000;
   for (i = 0; i < w * h; i ++) fb[i] = i;
   outl(0xa0000104, 1);

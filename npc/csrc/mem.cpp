@@ -24,7 +24,7 @@ long long mem_read(long long a, int len){
         //printf("second: %ld\n", tv.tv_sec); // 秒
         //printf("millisecond: %ld\n", tv.tv_sec * 1000 + tv.tv_usec / 1000); // 毫秒
 
-        uint64_t us = (tv.tv_sec) * 1000000 + tv.tv_usec  ;
+        uint64_t us = (tv.tv_sec) * 1000000 + tv.tv_usec ;
         //printf("sec: %lld\n",us/1000000);
         return us;
     }

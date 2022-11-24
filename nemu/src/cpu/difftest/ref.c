@@ -32,7 +32,7 @@ void difftest_memcpy(paddr_t addr, void *buf, size_t n, bool direction) {
     }
   }
   else {
-    for(long i = 0 ;i < n ; i++){
+    for(long i = 0 ;i < n ; i--){
       *(char *)(buf+i) = paddr_read(addr,1);
     }
   }

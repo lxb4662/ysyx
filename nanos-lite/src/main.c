@@ -6,7 +6,7 @@ void init_ramdisk(void);
 void init_irq(void);
 void init_fs(void);
 void init_proc(void);
-
+#define HAS_CTE
 int main() {
   extern const char logo[];
   printf("%s", logo);
@@ -18,9 +18,8 @@ int main() {
   init_device();
 
   init_ramdisk();
-#ifdef HAS_CTE
+
   init_irq();
-#endif
 
   init_fs();
 

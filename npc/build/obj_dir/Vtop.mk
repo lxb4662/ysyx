@@ -35,14 +35,12 @@ VM_PREFIX = Vtop
 VM_MODPREFIX = Vtop
 # User CFLAGS (from -CFLAGS on Verilator command line)
 VM_USER_CFLAGS = \
-	-I/home/lixinbao/ysyx-workbench/nvboard/include \
 	-I/usr/include/readline/ \
 	-I/home/lixinbao/ysyx-workbench/nemu/build \
 	-DTOP_NAME="Vtop" \
 
 # User LDLIBS (from -LDFLAGS on Verilator command line)
 VM_USER_LDLIBS = \
-	/home/lixinbao/ysyx-workbench/nvboard/build/nvboard.a \
 	-lSDL2 \
 	-lSDL2_image \
 	-lreadline \
@@ -51,7 +49,6 @@ VM_USER_LDLIBS = \
 
 # User .cpp files (from .cpp's on Verilator command line)
 VM_USER_CLASSES = \
-	auto_bind \
 	main \
 	mem \
 	sdb \
@@ -59,7 +56,6 @@ VM_USER_CLASSES = \
 
 # User .cpp directories (from .cpp's on Verilator command line)
 VM_USER_DIR = \
-	/home/lixinbao/ysyx-workbench/npc/build \
 	/home/lixinbao/ysyx-workbench/npc/csrc \
 
 
@@ -72,8 +68,6 @@ include $(VERILATOR_ROOT)/include/verilated.mk
 ### Executable rules... (from --exe)
 VPATH += $(VM_USER_DIR)
 
-auto_bind.o: /home/lixinbao/ysyx-workbench/npc/build/auto_bind.cpp
-	$(OBJCACHE) $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(OPT_FAST) -c -o $@ $<
 main.o: /home/lixinbao/ysyx-workbench/npc/csrc/main.cpp
 	$(OBJCACHE) $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(OPT_FAST) -c -o $@ $<
 mem.o: /home/lixinbao/ysyx-workbench/npc/csrc/mem.cpp
