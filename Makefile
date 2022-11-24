@@ -1,44 +1,57 @@
-STUID = ysyx_22050518
-STUNAME = 李鑫宝
+TOPNAME = top
+NXDC_FILES = constr/top.nxdc
+INC_PATH ?=
 
-# DO NOT modify the following code!!!
+VERILATOR = verilator
+VERILATOR_CFLAGS += -MMD --build -cc  \
+				-O3 --x-assign fast --x-initial fast --noassert  -Wno-fatal --trace --timescale 1ps/1ps
 
-TRACER = tracer-ysyx2204
-GITFLAGS = -q --author='$(TRACER) <tracer@ysyx.org>' --no-verify --allow-empty
+BUILD_DIR = ./build
+OBJ_DIR = $(BUILD_DIR)/obj_dir
+BIN = $(BUILD_DIR)/$(TOPNAME)
 
-YSYX_HOME = $(NEMU_HOME)/..
-WORK_BRANCH = $(shell git rev-parse --abbrev-ref HEAD)
-WORK_INDEX = $(YSYX_HOME)/.git/index.$(WORK_BRANCH)
-TRACER_BRANCH = $(TRACER)
+ALL = dummy
 
-LOCK_DIR = $(YSYX_HOME)/.git/
+default: $(BIN)
 
-# prototype: git_soft_checkout(branch)
-define git_soft_checkout
-	git checkout --detach -q && git reset --soft $(1) -q -- && git checkout $(1) -q --
-endef
+$(shell mkdir -p $(BUILD_DIR))
 
-# prototype: git_commit(msg)
-define git_commit
-	-@flock $(LOCK_DIR) $(MAKE) -C $(YSYX_HOME) .git_commit MSG='$(1)'
-	-@sync
-endef
+# constraint file
+SRC_AUTO_BIND = $(abspath $(BUILD_DIR)/auto_bind.cpp)
+$(SRC_AUTO_BIND): $(NXDC_FILES)
+	python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py $^ $@
 
-.git_commit:
-	-@while (test -e .git/index.lock); do sleep 0.1; done;               `# wait for other git instances`
-	-@git branch $(TRACER_BRANCH) -q 2>/dev/null || true                 `# create tracer branch if not existent`
-	-@cp -a .git/index $(WORK_INDEX)                                     `# backup git index`
-	-@$(call git_soft_checkout, $(TRACER_BRANCH))                        `# switch to tracer branch`
-	-@git add . -A --ignore-errors                                       `# add files to commit`
-	-@(echo "> $(MSG)" && echo $(STUID) $(STUNAME) && uname -a && uptime `# generate commit msg`) \
-	                | git commit -F - $(GITFLAGS)                        `# commit changes in tracer branch`
-	-@$(call git_soft_checkout, $(WORK_BRANCH))                          `# switch to work branch`
-	-@mv $(WORK_INDEX) .git/index                                        `# restore git index`
+# project source
+VSRCS = $(shell find $(abspath ./vsrc) -name "*.v")
+CSRCS = $(shell find $(abspath ./csrc) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
+CSRCS += $(SRC_AUTO_BIND)
+IMG ?=
+# rules for NVBoard
+include $(NVBOARD_HOME)/scripts/nvboard.mk
 
-.clean_index:
-	rm -f $(WORK_INDEX)
+# rules for verilator
+INCFLAGS = $(addprefix -I, $(INC_PATH))
+CFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" 
+LDFLAGS += -lSDL2 -lSDL2_image -lreadline -lhistory -linterpreter 
 
-_default:
-	@echo "Please run 'make' under subprojects."
+$(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
+	@rm -rf $(OBJ_DIR)
+	$(VERILATOR) $(VERILATOR_CFLAGS) \
+		--top-module $(TOPNAME) $^ \
+		$(addprefix -CFLAGS , $(CFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
+		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN))
 
-.PHONY: .git_commit .clean_index _default
+all: default
+run: $(BIN)
+	@echo IMG PATH :$(IMG)
+	@echo $(INC_PATH)
+	@echo timedatectl status
+	@$^ $(IMG)
+sim:
+	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
+	@echo "Write this Makefile by your self."
+	verilator -Wno-fatal csrc/main.cpp -top-module top --exe --build --trace --cc  -I vsrc/*.v 
+	./obj_dir/Vtop
+	gtkwave wave.vcd
+
+include ../Makefile
