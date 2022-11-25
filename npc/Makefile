@@ -1,5 +1,5 @@
 TOPNAME = top
-INC_PATH += /usr/include/readline/ /home/lixinbao/ysyx-workbench/nemu/build 
+INC_PATH += /usr/include/readline/ $(NEMU_HOME)/build
 
 VERILATOR = verilator
 VERILATOR_CFLAGS += -MMD --build -cc  \
