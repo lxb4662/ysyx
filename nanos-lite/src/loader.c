@@ -25,6 +25,7 @@ static uintptr_t loader(PCB *pcb, const char *filename) {
   fs_read(fp,&ehdr,sizeof(Elf_Ehdr));
   for(int i =0;i<ehdr.e_phnum;i++){
     fs_lseek(fp,ehdr.e_phoff+sizeof(Elf_Phdr)*i,0);
+    //  0 express from zero offset
     fs_read(fp,&phdr,sizeof(Elf_Phdr));
     if(phdr.p_type==PT_LOAD){
       fs_lseek(fp,phdr.p_offset,0);

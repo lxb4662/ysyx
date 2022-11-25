@@ -42,15 +42,15 @@ size_t dispinfo_read(void *buf, size_t offset, size_t len) {
   sprintf(buf, "WIDTH: %d\nHEIGHT: %d", w, h);
   return len;
 }
-
+// xie yi hang
 size_t fb_write(const void *buf, size_t offset, size_t len) {
-  // yield();
+  // du ping mu shu jv
   AM_GPU_CONFIG_T _config = io_read(AM_GPU_CONFIG);
-  
+  // qi dain
   int x = (offset) % _config.width;
   int y = (offset) / _config.width;
 
-  assert(offset + len <= _config.width * _config.height);
+  //xie yi hang io_write(AM_GPU_FBDRAW, x, y, (void*)buf, len, 1, true);
   io_write(AM_GPU_FBDRAW, x, y, (void*)buf, len, 1, true);
 
   return len;

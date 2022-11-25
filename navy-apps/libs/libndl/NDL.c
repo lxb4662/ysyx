@@ -8,8 +8,10 @@ static int evtdev = -1;
 static int fbdev = -1;
 static int screen_w = 0, screen_h = 0;
 
+
+//  return ms
 uint32_t NDL_GetTicks() {
-  struct timeval tv;
+  struct timeval tv;      //timeval yong lai fan hui miao he wei miao ,di er ge can shu bu yong guan 
   gettimeofday(&tv, NULL);
   //printf("NDL_get ticks down\n");
   return tv.tv_usec / 1000;
@@ -18,8 +20,8 @@ uint32_t NDL_GetTicks() {
 int NDL_PollEvent(char *buf, int len) {
   FILE* fp = fopen("/dev/events", "r");
   memset(buf, 0, len);
-  fgets(buf, len, fp);
-  buf[strlen(buf) - 1] = 0;
+  fgets(buf, len, fp);      //fgets cong wen jian zong get len ge zi jie 
+  buf[strlen(buf) - 1] = '\0';     
   fclose(fp);
   return strlen(buf);
 }
@@ -30,11 +32,14 @@ void NDL_OpenCanvas(int *w, int *h) {
   fscanf(fp, "WIDTH: %d\nHEIGHT: %d", &screen_w, &screen_h);
   // printf("%d %d\n", screen_w, screen_h);
   fclose(fp);
+  //ru guo da kai de hua bu da xiao wei 0 ,0  ze jiang hua bu da xiao she zhi wei ping mu da xiao 
   if(*w == 0 && *h == 0){
     *w = screen_w; *h = screen_h;
   }
-  printf("w%d h%d\n",screen_w,screen_h);
+  //printf("w%d h%d\n",screen_w,screen_h);
+  /*
   if (getenv("NWM_APP")) {
+    printf("NWM_APP\n");
     int fbctl = 4;
     fbdev = 5;
     screen_w = *w; screen_h = *h;
@@ -50,17 +55,17 @@ void NDL_OpenCanvas(int *w, int *h) {
       if (strcmp(buf, "mmap ok") == 0) break;
     }
     close(fbctl);
-  }
+  }*/
 }
 
 void NDL_DrawRect(uint32_t *pixels, int x, int y, int w, int h) {
-  int fd = _open("/dev/fb",0,0);
+  //wei shen me bu yong fopen fseek fwrite ? yin wei GPU de di zhi ying she you dian qi guai 
+  int fd = open("/dev/fb",0,0);
   for(int i = 0; i < h; i++){
-    _lseek(fd, ((y+i)*screen_w+x), SEEK_SET);
-    _write(fd, pixels + i * w, w);
+    lseek(fd, ((y+i)*screen_w+x), SEEK_SET);
+    write(fd, pixels + i * w, w);
   }
   close(fd);
-
 }
 /*
 static uint32_t screen[800][800];

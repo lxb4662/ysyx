@@ -1,0 +1,4 @@
+NAME = recursion
+SRCS = tests/recursion.c
+LIBS += klib
+include /home/lixinbao/ysyx-workbench/abstract-machine/Makefile

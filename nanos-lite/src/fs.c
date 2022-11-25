@@ -60,6 +60,8 @@ void init_fs() {
 
 int file_description = FD_FB;
 
+
+  // da kai wen jin bing jiang offset she zhi wei 0 ,fan hui zhi wei di ji ge wen jian 
 int fs_open(const char *pathname, int flags, int mode){
   for(int i = 0;i<sizeof(file_table)/sizeof(Finfo);i++){
     if(0==strcmp(file_table[i].name,pathname)){

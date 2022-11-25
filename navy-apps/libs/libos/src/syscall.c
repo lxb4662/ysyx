@@ -63,12 +63,15 @@ int _open(const char *path, int flags, mode_t mode) {
 int _write(int fd, void *buf, size_t count) {
   return _syscall_(SYS_write, fd, buf, count);
 }
+
+// du qv cheng xv de jie wei dizhi 
 extern char end;
 intptr_t  program_break = &end;
 
 void *_sbrk(intptr_t increment) {
   intptr_t re = program_break;
-  //write(1, "* sbrk", 6);
+  //qi shi ke yi zhi jie zai program_break hou main tian jian increment
+  // fan hui zhi qian de program_break
   if(_syscall_(SYS_brk, increment,0,0)==0){
     program_break = program_break + increment; 
   }

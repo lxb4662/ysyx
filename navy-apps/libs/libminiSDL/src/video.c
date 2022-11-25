@@ -54,6 +54,8 @@ void SDL_BlitSurface(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_
     uint32_t* dst_piexel = (uint32_t*)dst->pixels;
     for(int i = 0; i < srcrect_h; i++){
       memcpy(dst_piexel + (i + dst_y)*dst->w+dst_x, src_piexel + (i+srcrect_y)*src->w+srcrect_x, srcrect_w * 4);
+
+      //memcpy(dst,ref,size);
     }
   }
 }
@@ -82,31 +84,18 @@ void SDL_FillRect(SDL_Surface *dst, SDL_Rect *dstrect, uint32_t color) {
         _pixels[(dst_y+k) * dst->w + dst_x+j] = has_this_color;
       }
     }
-    
-    /*else {
-      dst->format->palette->ncolors ++;
-      dst->format->palette->colors[i].val = color;
-      dst->format->palette->colors[i].a = (color>>24)&0xff;
-      dst->format->palette->colors[i].r = (color>>16)&0xff;
-      dst->format->palette->colors[i].g = (color>>8)&0xff;
-      dst->format->palette->colors[i].b = color&0xff;
-      for(int k = 0; k < dst_h; k++){
-        for(int j = 0; j < dst_w; j++){
-          *(uint8_t *)dst->pixels[(dst_y+k) * dst->w + dst_x+j] = i;
-        }
-      }
-    }*/
   }
   else if(dst->format->BytesPerPixel == 4){
     uint32_t* _pixels = (uint32_t*)dst->pixels;
     for(int i = 0; i < dst_h; i++){
       for(int j = 0; j < dst_w; j++){
         _pixels[(dst_y+i) * dst->w + dst_x+j] = color;
+
       }
     }
   }
 }
-
+    //ru guo w\h dou wei ling ze shu xin zheng ge ping mu
 void SDL_UpdateRect(SDL_Surface *s, int x, int y, int w, int h) {
   if(x==0&&y==0&&w==0&&h==0){
     w = s->w;
@@ -123,6 +112,7 @@ void SDL_UpdateRect(SDL_Surface *s, int x, int y, int w, int h) {
       for(int j = 0; j < w; j++){
         SDL_Color c = s->format->palette->colors[s->pixels[(y+i)*s->w + x+j]];
         temp_p[i * w + j] = (c.a<<24)+(c.r<<16)+(c.g<<8)+(c.b);
+        //temp_p[i * w + j] = c.val;    yan she hui fan zhuan argb shi zheng que ge shi ,
         }
     }
     NDL_DrawRect(temp_p,  x, y, w, h);

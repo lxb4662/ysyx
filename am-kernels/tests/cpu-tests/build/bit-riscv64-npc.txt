@@ -1,5 +1,5 @@
 
-/home/lixinbao/ysyx-workbench/am-kernels/tests/cpu-tests/build/bit-riscv64-npc.elf：     文件格式 elf64-littleriscv
+/home/lixinbao/ysyx-workbench/am-kernels/tests/cpu-tests/build/bit-riscv64-npc.elf:     file format elf64-littleriscv
 
 
 Disassembly of section .text:

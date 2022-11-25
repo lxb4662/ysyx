@@ -14,6 +14,7 @@ static Context* do_event(Event e, Context* c) {
 int init_irq(void) {
   Log("Initializing interrupt/exception handler...");
   cte_init(do_event);
+  //cte_init in am
   Log("Initializing interrupt/exception handler down");
   return 0;
 }
