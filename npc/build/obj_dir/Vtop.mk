@@ -4,7 +4,7 @@
 # Execute this makefile from the object directory:
 #    make -f Vtop.mk
 
-default: /home/lixinbao/ysyx-workbench/npc/build/top
+default: /home/ysyx/exam-test/ysyx-lxb/npc/build/top
 
 ### Constants...
 # Perl executable (from $PERL)
@@ -36,16 +36,15 @@ VM_MODPREFIX = Vtop
 # User CFLAGS (from -CFLAGS on Verilator command line)
 VM_USER_CFLAGS = \
 	-I/usr/include/readline/ \
-	-I/home/lixinbao/ysyx-workbench/nemu/build \
 	-DTOP_NAME="Vtop" \
 
 # User LDLIBS (from -LDFLAGS on Verilator command line)
 VM_USER_LDLIBS = \
+	/home/ysyx/exam-test/ysyx-lxb/npc/csrc/interpreter.so \
 	-lSDL2 \
 	-lSDL2_image \
 	-lreadline \
 	-lhistory \
-	-linterpreter \
 
 # User .cpp files (from .cpp's on Verilator command line)
 VM_USER_CLASSES = \
@@ -56,7 +55,7 @@ VM_USER_CLASSES = \
 
 # User .cpp directories (from .cpp's on Verilator command line)
 VM_USER_DIR = \
-	/home/lixinbao/ysyx-workbench/npc/csrc \
+	/home/ysyx/exam-test/ysyx-lxb/npc/csrc \
 
 
 ### Default rules...
@@ -68,17 +67,17 @@ include $(VERILATOR_ROOT)/include/verilated.mk
 ### Executable rules... (from --exe)
 VPATH += $(VM_USER_DIR)
 
-main.o: /home/lixinbao/ysyx-workbench/npc/csrc/main.cpp
+main.o: /home/ysyx/exam-test/ysyx-lxb/npc/csrc/main.cpp
 	$(OBJCACHE) $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(OPT_FAST) -c -o $@ $<
-mem.o: /home/lixinbao/ysyx-workbench/npc/csrc/mem.cpp
+mem.o: /home/ysyx/exam-test/ysyx-lxb/npc/csrc/mem.cpp
 	$(OBJCACHE) $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(OPT_FAST) -c -o $@ $<
-sdb.o: /home/lixinbao/ysyx-workbench/npc/csrc/sdb.c
+sdb.o: /home/ysyx/exam-test/ysyx-lxb/npc/csrc/sdb.c
 	$(OBJCACHE) $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(OPT_FAST) -c -o $@ $<
-vga.o: /home/lixinbao/ysyx-workbench/npc/csrc/vga.c
+vga.o: /home/ysyx/exam-test/ysyx-lxb/npc/csrc/vga.c
 	$(OBJCACHE) $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(OPT_FAST) -c -o $@ $<
 
 ### Link rules... (from --exe)
-/home/lixinbao/ysyx-workbench/npc/build/top: $(VK_USER_OBJS) $(VK_GLOBAL_OBJS) $(VM_PREFIX)__ALL.a $(VM_HIER_LIBS)
+/home/ysyx/exam-test/ysyx-lxb/npc/build/top: $(VK_USER_OBJS) $(VK_GLOBAL_OBJS) $(VM_PREFIX)__ALL.a $(VM_HIER_LIBS)
 	$(LINK) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) $(LIBS) $(SC_LIBS) -o $@
 
 

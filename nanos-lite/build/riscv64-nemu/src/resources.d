@@ -1,2 +1,2 @@
-/home/lixinbao/ysyx-workbench/nanos-lite/build/riscv64-nemu/./src/resources.o: \
- /home/lixinbao/ysyx-workbench/nanos-lite/src/resources.S
+/home/ysyx/exam-test/ysyx-lxb/nanos-lite/build/riscv64-nemu/./src/resources.o: \
+ /home/ysyx/exam-test/ysyx-lxb/nanos-lite/src/resources.S

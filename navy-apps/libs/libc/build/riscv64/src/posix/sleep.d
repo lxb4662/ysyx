@@ -1,2 +1,2 @@
-/home/lixinbao/ysyx-workbench/navy-apps/libs/libc/build/riscv64/src/posix/sleep.o: \
- /home/lixinbao/ysyx-workbench/navy-apps/libs/libc/src/posix/sleep.c
+/home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/build/riscv64/src/posix/sleep.o: \
+ /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/src/posix/sleep.c

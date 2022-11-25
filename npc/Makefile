@@ -1,5 +1,5 @@
 TOPNAME = top
-INC_PATH += /usr/include/readline/ $(NEMU_HOME)/build
+INC_PATH += /usr/include/readline/ 
 
 VERILATOR = verilator
 VERILATOR_CFLAGS += -MMD --build -cc  \
@@ -19,7 +19,7 @@ $(shell mkdir -p $(BUILD_DIR))
 
 # project source
 VSRCS = $(shell find $(abspath ./vsrc) -name "*.v")
-CSRCS = $(shell find $(abspath ./csrc) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
+CSRCS = $(shell find $(abspath ./csrc) -name "*.c" -or -name "*.cc" -or -name "*.cpp" -or -name "*.so")
 CSRCS += $(SRC_AUTO_BIND)
 IMG ?=
 # rules for NVBoard
@@ -28,7 +28,7 @@ IMG ?=
 # rules for verilator
 INCFLAGS = $(addprefix -I, $(INC_PATH))
 CFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" 
-LDFLAGS += -lSDL2 -lSDL2_image -lreadline -lhistory -linterpreter 
+LDFLAGS += -lSDL2 -lSDL2_image -lreadline -lhistory 
 
 #$^ yi lai wen jian 
 #$@ mu biao wen jian 
