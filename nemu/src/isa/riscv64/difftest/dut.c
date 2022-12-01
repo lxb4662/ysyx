@@ -21,8 +21,9 @@ bool isa_difftest_checkregs(CPU_state *ref_r, vaddr_t pc) {
     //printf("diff checkout reg \n");
   for(int i=0;i<32;i++){
     if(ref_r->gpr[i]!=cpu.gpr[i]){
+      printf("error in reg %d nemu pc is %lx spike pc is %lx\n",i,cpu.pc,ref_r->pc);
       for (int j = 0;j<32;j++)
-        printf("reg error %d ref:%lx gpr:%lx nemu pc is %lx spike pc is %lx\n",i,ref_r->gpr[i],cpu.gpr[i],cpu.pc,ref_r->pc);
+        printf("reg error %d spike:%lx nemu:%lx \n",j,ref_r->gpr[j],cpu.gpr[j]);
       return false;
     }
   }

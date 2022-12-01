@@ -1,2 +1,2 @@
-/home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libndl/build/native/NDL.o: \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libndl/NDL.c
+/home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libndl/build/native/NDL.o: \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libndl/NDL.c

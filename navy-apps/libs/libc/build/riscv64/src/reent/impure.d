@@ -1,14 +1,14 @@
-/home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/build/riscv64/src/reent/impure.o: \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/src/reent/impure.c \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/include/reent.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/include/sys/reent.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/include/_ansi.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/include/newlib.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/include/sys/config.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/include/machine/ieeefp.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/include/sys/features.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/include/_newlib_version.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/include/sys/_types.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/include/machine/_types.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/include/machine/_default_types.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libc/include/sys/lock.h
+/home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libc/build/riscv64/src/reent/impure.o: \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libc/src/reent/impure.c \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libc/include/reent.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libc/include/sys/reent.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libc/include/_ansi.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libc/include/newlib.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libc/include/sys/config.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libc/include/machine/ieeefp.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libc/include/sys/features.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libc/include/_newlib_version.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libc/include/sys/_types.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libc/include/machine/_types.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libc/include/machine/_default_types.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libc/include/sys/lock.h

@@ -1,1 +1,1 @@
-vga.o: /home/ysyx/exam-test/ysyx-lxb/npc/csrc/vga.c
+vga.o: /home/lixinbao/ysyx-exam/ysyx-exam/npc/csrc/vga.c

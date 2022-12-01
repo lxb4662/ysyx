@@ -12,7 +12,7 @@
 using namespace std;
 
 //#define TRACE
-//#define DIFF
+#define DIFF
 int dump_cnt = 0;
 int trace_cnt = 10000;
 #ifdef DIFF

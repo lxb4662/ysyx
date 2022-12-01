@@ -275,7 +275,7 @@ VL_INLINE_OPT void Vtop___024root___sequent__TOP__2(Vtop___024root* vlSelf) {
                      & (1U != (IData)(vlSelf->top__DOT__ctl1__DOT__fsm))))) {
         VL_WRITEF("reg a0 is %20# \n\n",64,vlSelf->top__DOT__stage1__DOT__regs__DOT__regs
                   [0xaU]);
-        VL_FINISH_MT("/home/ysyx/exam-test/ysyx-lxb/npc/vsrc/first_stage.v", 321, "");
+        VL_FINISH_MT("/home/lixinbao/ysyx-exam/ysyx-exam/npc/vsrc/first_stage.v", 321, "");
     }
     if ((((IData)(vlSelf->top__DOT__rd_w_o_exu) | (IData)(vlSelf->top__DOT__rd_w_o_lsu)) 
          | (IData)(vlSelf->top__DOT__rd_w_o_pri))) {

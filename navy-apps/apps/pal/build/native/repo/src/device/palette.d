@@ -1,15 +1,15 @@
-/home/ysyx/exam-test/ysyx-lxb/navy-apps/apps/pal/build/native/repo/src/device/palette.o: \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/apps/pal/repo/src/device/palette.c \
+/home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/apps/pal/build/native/repo/src/device/palette.o: \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/apps/pal/repo/src/device/palette.c \
  repo/include/main.h repo/include/common.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libminiSDL/include/SDL.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libminiSDL/include/sdl-general.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libminiSDL/include/sdl-event.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libminiSDL/include/sdl-timer.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libminiSDL/include/sdl-video.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libminiSDL/include/sdl-audio.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libminiSDL/include/sdl-file.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libminiSDL/include/SDL.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libminiSDL/include/sdl-general.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libminiSDL/include/sdl-event.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libminiSDL/include/sdl-timer.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libminiSDL/include/sdl-video.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libminiSDL/include/sdl-audio.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libminiSDL/include/sdl-file.h \
  repo/include/myFLOAT.h \
- /home/ysyx/exam-test/ysyx-lxb/navy-apps/libs/libfixedptc/include/fixedptc.h \
+ /home/lixinbao/ysyx-exam/ysyx-exam/navy-apps/libs/libfixedptc/include/fixedptc.h \
  repo/include/opltypes.h repo/include/util.h repo/include/palcommon.h \
  repo/include/font.h repo/include/palcfg.h repo/include/global.h \
  repo/include/map.h repo/include/ui.h repo/include/res.h \
