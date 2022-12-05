@@ -314,7 +314,7 @@ int main(int argc, char** argv, char** env) {ofstream outfile;
     top->eval();
     
     #ifdef TRACE
-    if(inst_cnt>=trace_cnt-100){
+    if(inst_cnt>=trace_cnt-10000){
       tfp->dump(contextp->time()); //dump wave
       contextp->timeInc(1); //推动仿真时间
     }
