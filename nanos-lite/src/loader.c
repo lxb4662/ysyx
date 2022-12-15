@@ -39,19 +39,6 @@ static uintptr_t loader(PCB *pcb, const char *filename) {
       }
     }
   }
-  /*
-  Elf_Ehdr ehdr;
-  Elf_Phdr phdr; 
-  //printf("lixinbao\n");
-  ramdisk_read(&ehdr, 0, sizeof(Elf_Ehdr));
-  for(int i =0;i<ehdr.e_phnum;i++){
-    ramdisk_read(&phdr, ehdr.e_phoff+i*sizeof(Elf_Phdr), sizeof(Elf_Phdr));
-    //printf("phdr.p_vaddr:%d\n",phdr.p_filesz);
-    ramdisk_read((void *)phdr.p_vaddr,phdr.p_offset,phdr.p_memsz);
-    for(long long int j = phdr.p_filesz;j<phdr.p_memsz;j++){
-      *(char *)(j+phdr.p_vaddr) = 0; 
-    }
-  }*/
   Log("loader %s down",filename);
   return ehdr.e_entry;
 }

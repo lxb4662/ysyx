@@ -14,15 +14,17 @@ int main() {
   Log("Build time: %s, %s", __TIME__, __DATE__);
 
   init_mm();
-
+  printf("init mm is done\n");
   init_device();
-
+  printf("init ramdisk is done\n");
   init_ramdisk();
-
+  printf("init ramdisk is done\n");
   init_irq();
 
+  printf("init irq is done\n");
   init_fs();
 
+  printf("init fs is done\n");
   init_proc();
   
   Log("Finish initialization");

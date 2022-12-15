@@ -70,7 +70,7 @@ int fs_open(const char *pathname, int flags, int mode){
       return i;
     }
   }
-  printf("can not find %s\n",pathname);
+  printf("ERROR: can not find the file :%s\n",pathname);
   return 0;
 }
 

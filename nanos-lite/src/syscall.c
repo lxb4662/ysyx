@@ -8,18 +8,6 @@ size_t fs_read(int fd, void *buf, size_t len);
 long int gettimeofday();
 
 
-
-/*
-int sys_write(int fd, void *buf, size_t count) {
-  //printf("write\n");
-  if(fd==1){
-    for(int i = 0;i<count;i++){
-      putch(*(char *)(buf+i));
-    }
-  }
-  return count;
-}*/
-
 int sys_brk(int  addr){
   //sys_write(1,"sys brk",6);
   return 0;
@@ -38,7 +26,7 @@ void do_syscall(Context *c) {
     case SYS_yield:{ printf(" SYS_yield = %d\n", a[0]); break;}
     case SYS_exit:{ halt(a[1]); break;}
     case SYS_open:{ c->GPRx = fs_open((char *)a[1],a[2],a[3]); break;}
-    case SYS_read:{ c->GPRx = fs_read(a[1],(char *)a[2],a[3]);break;}
+    case SYS_read:{ c->GPRx = fs_read(a[1],(void *)a[2],a[3]);break;}
     case SYS_write:{ c->GPRx = fs_write(a[1],(void *)a[2],a[3]); break;}
     case SYS_lseek:{ c->GPRx = fs_lseek(a[1],a[2],a[3]);break;}
     case SYS_close:{ c->GPRx = 0;break;}
