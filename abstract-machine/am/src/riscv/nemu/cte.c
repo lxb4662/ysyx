@@ -7,7 +7,7 @@ static Context* (*user_handler)(Event, Context*) = NULL;
 Context* __am_irq_handle(Context *c) {
   //printf("__am_irq_handle %d\n",(int )c->mcause);
   if (user_handler) {
-    Event ev = {0};
+    Event ev = {0};             // the mcause from ecall is always 11 or 0xb
     switch (c->mcause) {
       case -1: ev.event = EVENT_YIELD; break;
       case 0: case 1: case 2: case 3: case 4: case 5: case 6:
@@ -17,7 +17,7 @@ Context* __am_irq_handle(Context *c) {
       default: ev.event = EVENT_ERROR; break;
     }
 
-    c = user_handler(ev, c);
+    c = user_handler(ev, c);    // this function is do event; do_event func call do_system func to accomplish the system call;
     assert(c != NULL);
   }
 

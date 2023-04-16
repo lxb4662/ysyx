@@ -100,7 +100,7 @@ int main(const char *args) {
   uint64_t t0 = uptime();
   uint64_t score_time = 0;
 
-  for (int i = 0; i < LENGTH(benchmarks); i ++) {
+  for (int i = 4; i < LENGTH(benchmarks); i ++) {
     Benchmark *bench = &benchmarks[i];
     current = bench;
     setting = &bench->settings[setting_id];

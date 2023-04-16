@@ -70,13 +70,14 @@ int fs_open(const char *pathname, int flags, int mode){
       return i;
     }
   }
-  printf("ERROR: can not find the file :%s\n",pathname);
+  printf("can not find %s\n",pathname);
   return 0;
 }
 
 size_t fs_read(int fd, void* buf, size_t len){
   // printf("fd: %d offset: %d\n", fd, file_table[fd].open_offset);
   int read_sz;
+ 
   if(file_table[fd].read == NULL){
     assert(file_table[fd].open_offset <= file_table[fd].size);
     read_sz = len + file_table[fd].open_offset <= file_table[fd].size ? len : file_table[fd].size - file_table[fd].open_offset;
@@ -111,7 +112,7 @@ size_t fs_lseek(int fd, size_t offset, int whence){
   switch(whence){
     case SEEK_SET: _offset = offset; break;
     case SEEK_CUR: _offset = file_table[fd].open_offset + offset; break;
-    case SEEK_END: _offset = file_table[fd].size + offset; break;
+    case SEEK_END: _offset = file_table[fd].size - offset; break;
     default: panic("Invalid lseek mode: %d\n", whence);
   }
   file_table[fd].open_offset = _offset;

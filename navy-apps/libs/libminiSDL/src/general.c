@@ -19,6 +19,7 @@ int SDL_Init(uint32_t flags) {
   fscanf(fp, "WIDTH: %d\nHEIGHT: %d", &screen_width, &screen_height);
   printf("sdl init /fscanf\n");
   fclose(fp);
+  printf("close fp\n");
   return NDL_Init(flags);
 }
 

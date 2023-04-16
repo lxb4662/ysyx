@@ -1,9 +1,9 @@
-TOPNAME = top
-INC_PATH += /usr/include/readline/ 
+TOPNAME = top_soc
+INC_PATH += /usr/include/readline/ $(NEMU_HOME)/build
 
 VERILATOR = verilator
 VERILATOR_CFLAGS += -MMD --build -cc  \
-				-O3 --x-assign fast --x-initial fast --noassert  -Wno-fatal --trace --timescale 1ps/1ps
+				-O3 --x-assign fast --x-initial fast --noassert  -Wno-fatal --trace --timescale 1ps/1ps -Wno-PINMISSING --trace-max-array 256 --trace-max-width 256
 
 BUILD_DIR = ./build
 OBJ_DIR = $(BUILD_DIR)/obj_dir

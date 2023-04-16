@@ -7,6 +7,7 @@ static uint8_t pmem[0x8000000] = {};
 
 long long mem_read(long long a, int len){
     long long unsigned int addr = a;
+    //printf("mem read\n");
     if( addr >= 0x80000000 && addr<=(0x80000000+0x8000000)){
           addr = addr - 0x80000000;
         switch(len){
@@ -77,6 +78,7 @@ long long mem_read_inst(long long a, int len){
 int mem_write(long long a, int len, long long data){
   unsigned long long int d = data;
   unsigned long long int addr = a;
+  //printf("mem write\n");
   if(addr>=0x80000000&& addr<=(0x80000000+0x8000000)){
     for (int i = 0;i<len;i++){
         pmem[a+i-0x80000000] = d;
@@ -107,7 +109,7 @@ int mem_write(long long a, int len, long long data){
   return 1;
 }
 
-long load_img() {
+long load_img(char img_file[]) {
   if (img_file == NULL) {
     
     return 4096; // built-in image size
@@ -115,7 +117,7 @@ long load_img() {
 
   FILE *fp = fopen(img_file, "rb");
   //Assert(fp, "Can not open '%s'", img_file);
-
+  printf("loading image %s\n",img_file);
   fseek(fp, 0, SEEK_END);
   long size = ftell(fp);
 
@@ -135,9 +137,41 @@ for(int i = 0 ;i<=100;i++){
 }
 
 uint64_t npc_reg [32];
+uint32_t npc_write;
+uint32_t npc_pc;
+uint32_t npc_valid;
 
 void reg_cpy(int adder, int  a,int b){
   //printf("npc reg %d : %lx\n",1,a);
   npc_reg [adder] = (long long int )((unsigned int)b )+((long long int )(a)<<32) ;
   //printf("npc sync reg %d : %x%x\n",adder,a,b);
+}
+extern riscv npc;
+void status_cpy(int addr, int a1, int a0, int write, int pc, int incache,int valid)
+{
+
+  
+  npc.valid = valid;
+  if(valid){
+    if(write){
+      npc.reg [addr] = (long long int )((unsigned int)a1 )+((long long int )(a0)<<32) ; 
+    }
+    npc.pc = (unsigned int)pc;
+    npc.incache = incache;
+    //printf("pc:%8x,addr:%2d,data:%16llx,write:%1d,incache:%d\n",npc.pc,addr,npc.reg [addr],write,incache);
+  }
+  
+}
+
+
+
+void mtrace(int pc,int addr, int a0, int a1, int len){
+  #ifdef mtrace
+		fstream f;
+	//追加写入,在原来基础上加了ios::app 
+	  f.open("data.txt",ios::out|ios::app);
+	//输入你想写入的内容 
+	  f<<"pc:"<<hex<<pc<<"\taddr"<<hex<<addr<<"\tdata:"<<hex<<a1<<hex<<a0<<"\tlen:"<<len<<endl;
+    f.close();
+    #endif
 }

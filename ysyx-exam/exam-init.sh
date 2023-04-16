@@ -47,3 +47,4 @@ cp ysyx-exam/exam_defconfig $NEMU_HOME/configs/
 make -C $NEMU_HOME exam_defconfig
 d="ISA=native"
 make -C $NAVY_HOME/apps/pal $d install
+make -C $NAVY_HOME/apps/bird $d install
