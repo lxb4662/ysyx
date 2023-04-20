@@ -451,10 +451,10 @@ main(
    {
 	   TerminateOnError("Could not initialize SDL: %s.\n", SDL_GetError());
    }
-   pirntf("PAL loadfig\n");
+   //pirntf("PAL loadfig\n");
    PAL_LoadConfig(TRUE);
 
-   pirntf("PAL loadfig done\n");
+   //pirntf("PAL loadfig done\n");
    //
    // If user requests a file-based log, then add it after the system-specific one.
    //
