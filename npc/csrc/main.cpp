@@ -208,12 +208,37 @@ int get_head_len()
   return file_size;
 }
 
+int prin_time() {
+    char len[20] = {0};
+
+    time_t timep;
+    time(&timep);
+
+    struct tm *p;
+    p = gmtime(&timep);
+
+    snprintf(len, 20, "%d-%d-%d %d:%d:%d", 1900 + p->tm_year, 1 + p->tm_mon, p->tm_mday, 8 + p->tm_hour, p->tm_min, p->tm_sec);
+
+    printf("\n%s\n", len);
+    return 0;
+}
+int get_second(){
+  int sec = time((time_t *)NULL);
+    
+    //time_t * tloc;
+    //int sec = time(tloc);
+
+    //printf("%d\n", sec);
+    return sec;
+}
+
+
 int main(int argc, char** argv, char** env) {
 
   printf("img path is :%s",argv[1]);
   difftest_init(1);
   load_img(argv[1]);
-    
+  prin_time();  
   VerilatedContext* contextp = new VerilatedContext;
   contextp->commandArgs(argc, argv);
   Vtop_soc* top = new Vtop_soc{contextp};
@@ -237,19 +262,24 @@ int main(int argc, char** argv, char** env) {
   tfp->open("wave.vcd"); //设置输出的文件wave.vcd
   reset_soc(top,tfp,contextp);
 
-  
-
+  long int clk_cnt = 1;
+  int begin_time = get_second();
   while(!Verilated::gotFinish()){
-
+    clk_cnt ++;
     if(!run_one_clk_soc_with_test(top,tfp,contextp)){
       printf("error: pc %8x\n",npc.pc);
       break;
     };
+    #ifdef TRACE
     if(contextp->time()%100000==0){
       //printf("new round\n");
       tfp->close();
       tfp->open("wave.vcd"); //设置输出的文件wave.vcd
       //cut_vcd(vcd_head_len);
+    }
+    #endif
+    if(clk_cnt%10000000==0){
+    	printf("clock pre second %d \n",(clk_cnt/(get_second()-begin_second)));
     }
   }
 
