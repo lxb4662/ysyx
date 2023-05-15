@@ -70,9 +70,8 @@ module ysyx_22050518_alu_fusion(
     assign add_in2 = sub?(~add_in2_w_sel):add_in2_w_sel;
 
     wire [63:0] add_out;
-    ysyx_22050518_add add(.in1(add_in1),.in2(add_in2),.c_in(alu_op[4]),.out(add_out));
-
-
+    //ysyx_22050518_add add(.in1(add_in1),.in2(add_in2),.c_in(alu_op[4]),.out(add_out));
+    assign add_out = add_in1 + add_in2 + alu_op[4];
 
     wire [63:0]     mul_out_h;
     wire [63:0]     mul_out_l;

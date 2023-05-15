@@ -1,4 +1,4 @@
-`define full_div
+//`define full_div
 module ysyx_22050518_div(
     input       clk,
     input       rst_n,
