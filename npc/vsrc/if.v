@@ -119,7 +119,7 @@ module dc(
     input [5+64+1-1:0]      wb_dc,
     
 
-    output reg [1023:0]     dc_ex,
+    output reg [289:0]     dc_ex,
     output                  ready_in,
     input                   next_stage_ready
     
@@ -298,7 +298,7 @@ module dc(
 
     always@(posedge clk)begin
         if(!rst_n)begin
-            dc_ex <= 1024'd0;
+            dc_ex <= 'd0;
         end
         else begin
             if(next_stage_ready)begin
@@ -325,7 +325,7 @@ endmodule
 module exu(
     input               clk,
     input               rst_n,
-    input [1023:0]      dc_ex,
+    input [289:0]      dc_ex,
     input [64+5+1-1:0]        sideway,
     output              exu_ready_in,
     output reg          jup,
@@ -652,7 +652,7 @@ module lsu(
     input clk,
     input rst_n,
 
-    input [1023:0]                      dc_ls,
+    input [289:0]                      dc_ls,
     input [64+5+1-1:0]                  sideway,
     output                              lsu_ready_in,
     output [1+32+64+5+1+1-1:0]                 wb,
@@ -664,12 +664,12 @@ module lsu(
     input [64 + 1 + 1 -1 :0]                cache_bus_rsp,
     // data addr_on data_ok
 
-    output [1 + 4 + 32 - 1 : 0]             sram_busr_out,
+    output [1 + 6 + 32 - 1 : 0]             sram_busr_out,
     //  r_addr r_type r_req
-    input [1 + 1 + 128 - 1 :0]              sram_busr_in,
+    input [1 + 1 + 256 - 1 :0]              sram_busr_in,
     // r_rdy re_data re_valid 
 
-    output [32 + 128 + 4 + 16 + 1 - 1 : 0]  sram_busw_out,
+    output [32 + 256 + 6 + 16 + 1 - 1 : 0]  sram_busw_out,
     //  {sram_w_addr,sram_w_data,sram_w_type,sram_w_strb,sram_w_req};
     input                                   sram_busw_in   
 
@@ -781,7 +781,8 @@ module lsu(
     assign ls_addr_all = (fsm==4'h0)?ls_addr:ls_addr_reg;
     wire addr_in_cache;
     assign addr_in_cache = ls_addr_all[31:28]==4'h8;
-
+    wire [63:0] ls_data_all;
+    assign ls_data_all = (fsm==4'h0)?rs2_sw:rs2_sw_reg;
 
     /////////////////////////////////   
     // length gen
@@ -856,8 +857,8 @@ module lsu(
     wire        cache_addr_ok;
     wire        cache_data_ok;
 
-    assign cache_addr   = (fsm==4'h0)?ls_addr:ls_addr_reg;
-    assign cache_wdata  = (fsm==4'h0)?store_data:rs2_sw_reg;
+    assign cache_addr   = ls_addr_all;
+    assign cache_wdata  = ls_data_all;
     assign cache_type   = cache_len;
     assign cache_valid  = (load||store)&&addr_in_cache&&valid_i&&((fsm==4'h0)||(fsm==4'h1));
     assign cache_write  = addr_in_cache&&store&&valid_i;
@@ -876,34 +877,34 @@ module lsu(
     /////////////////////////////////
 
     wire [31:0]     sram_r_addr;
-    wire [3:0]      sram_r_type;
+    wire [5:0]      sram_r_type;
     wire            sram_r_req;
 
     wire            sram_r_rdy;
-    wire [127:0]    sram_re_data;
+    wire [255:0]    sram_re_data;
     wire            sram_re_valid;
 
-    assign sram_r_addr = ls_addr;
+    assign sram_r_addr = ls_addr_all;
     assign sram_r_type = sram_len;
     assign sram_r_req  = load&&(!addr_in_cache)&&valid_i;
 
     assign sram_busr_out = {sram_r_addr,sram_r_type,sram_r_req};
-    assign {sram_r_rdy,sram_re_data,sram_re_valid} = sram_busr_in;
+    assign {sram_re_data,sram_r_rdy,sram_re_valid} = sram_busr_in;
 
     wire sram_read_ready_in;
     assign sram_read_ready_in = sram_r_rdy;
     
 
     wire [31:0]     sram_w_addr;
-    wire [127:0]    sram_w_data;
-    wire [3:0]      sram_w_type;
+    wire [255:0]    sram_w_data;
+    wire [5:0]      sram_w_type;
     wire [15:0]     sram_w_strb;
     wire            sram_w_req;
 
     wire            sram_w_rdy;
 
-    assign sram_w_addr = (fsm==4'h0)?ls_addr:ls_addr_reg;
-    assign sram_w_data = (fsm==4'h0)?store_data:rs2_sw_reg;
+    assign sram_w_addr = ls_addr_all;
+    assign sram_w_data = ls_data_all;
     assign sram_w_type = sram_len;
     assign sram_w_strb = ~16'd0;
     assign sram_w_req  = (store)&&(~addr_in_cache)&&valid_i&&((fsm==4'h0)||(fsm==4'h1));
@@ -1229,49 +1230,49 @@ module sram_bus_interconnect(
     input clk,
     input rst_n,
 
-    input   [32+4+1-1:0]        r_in_0,
-    output  [128+1+1-1:0]       r_out_0,
+    input   [`MEM_BUS_ADDR_WIDTH+`MEM_BUS_TYPE_WIDTH+1-1:0]                             r_in_0,
+    output  [`MEM_BUS_DATA_WIDTH+1+1-1:0]                                               r_out_0,
 
-    input [32+128+4+16+1-1:0]   w_in_0,
-    output                      w_out_0,
+    input   [`MEM_BUS_ADDR_WIDTH+`MEM_BUS_DATA_WIDTH+`MEM_BUS_TYPE_WIDTH+16+1-1:0]      w_in_0,
+    output                                                                              w_out_0,
 
     
-    input   [32+4+1-1:0]        r_in_1,
-    output  [128+1+1-1:0]       r_out_1,
+    input   [`MEM_BUS_ADDR_WIDTH+`MEM_BUS_TYPE_WIDTH+1-1:0]                             r_in_1,
+    output  [`MEM_BUS_DATA_WIDTH+1+1-1:0]                                               r_out_1,
 
-    input [32+128+4+16+1-1:0]   w_in_1,
-    output                      w_out_1,
+    input   [`MEM_BUS_ADDR_WIDTH+`MEM_BUS_DATA_WIDTH+`MEM_BUS_TYPE_WIDTH+16+1-1:0]      w_in_1,
+    output                                                                              w_out_1,
     
-    input   [32+4+1-1:0]        r_in_2,
-    output  [128+1+1-1:0]       r_out_2,
+    input   [`MEM_BUS_ADDR_WIDTH+`MEM_BUS_TYPE_WIDTH+1-1:0]                             r_in_2,
+    output  [`MEM_BUS_DATA_WIDTH+1+1-1:0]                                               r_out_2,
 
-    input [32+128+4+16+1-1:0]   w_in_2,
-    output                      w_out_2,
+    input   [`MEM_BUS_ADDR_WIDTH+`MEM_BUS_DATA_WIDTH+`MEM_BUS_TYPE_WIDTH+16+1-1:0]      w_in_2,
+    output                                                                              w_out_2,
 
-    output reg  [32+4+1-1:0]        r_in_3,
-    input  [128+1+1-1:0]       r_out_3,
+    output reg  [`MEM_BUS_ADDR_WIDTH+`MEM_BUS_TYPE_WIDTH+1-1:0]                         r_in_3,
+    input  [`MEM_BUS_DATA_WIDTH+1+1-1:0]       r_out_3,
 
-    output reg [32+128+4+16+1-1:0]   w_in_3,
+    output reg [`MEM_BUS_ADDR_WIDTH+`MEM_BUS_DATA_WIDTH+`MEM_BUS_TYPE_WIDTH+16+1-1:0]   w_in_3,
     input                       w_out_3
 
 );
 
-    wire [31:0]     r0_addr;
-    wire [3:0]      r0_type;
-    wire            r0_req;
+    wire [`MEM_BUS_ADDR_WIDTH-1:0]      r0_addr;
+    wire [`MEM_BUS_TYPE_WIDTH-1:0]      r0_type;
+    wire                                r0_req;
 
-    wire            r0_rdy;
-    wire [127:0]    re0_data;
+    wire                                r0_rdy;
+    wire [`MEM_BUS_DATA_WIDTH-1:0]      re0_data;
     wire            re0_valid;
 
     assign {r0_addr,r0_type,r0_req} = r_in_0;
 
-    wire [31:0]     r3_addr;
-    wire [3:0]      r3_type;
+    wire [`MEM_BUS_ADDR_WIDTH-1:0]      r3_addr;
+    wire [`MEM_BUS_TYPE_WIDTH-1:0]      r3_type;
     wire            r3_req;
 
     wire            r3_rdy;
-    wire [127:0]    re3_data;
+    wire [`MEM_BUS_DATA_WIDTH-1:0]      re3_data;
     wire            re3_valid;
 
     assign {re3_data,r3_rdy,re3_valid} = r_out_3;
@@ -1428,7 +1429,24 @@ assign eq = {63'b0,in0==in1};
 
 endmodule
 
+
 module ysyx_22050518_add (
+ input [63:0]    in1, 
+ input [63:0]    in2,
+ input            c_in,
+ output           c_out,
+ output [63:0]    out 
+);
+
+    assign {c_out,out} = in1+in2+c_in;
+
+endmodule
+
+
+
+
+
+module ysyx_22050518_add_1 (
  input [63:0]    in1, 
  input [63:0]    in2,
  input            c_in,
@@ -1922,7 +1940,7 @@ module ysyx_050518_div(
     );
 
     reg [6:0]   fsm;
-    reg [6:0]   fsm_next;
+    wire [6:0]   fsm_next;
 
 
     always@(posedge clk)begin
@@ -1934,77 +1952,8 @@ module ysyx_050518_div(
         end
     end
 
-    always@(*)begin
-        case(fsm)
-            7'd0: fsm_next = (div_valid)?7'd1:7'd0;
-            7'd1: fsm_next = 7'd2;
-            7'd2: fsm_next = 7'd3;
-            7'd3: fsm_next = 7'd4;
-            7'd4: fsm_next = 7'd5;
-            7'd5: fsm_next = 7'd6;
-            7'd6: fsm_next = 7'd7;
-            7'd7: fsm_next = 7'd8;
-            7'd8: fsm_next = 7'd9;
-            7'd9: fsm_next = 7'd10;
-            7'd10: fsm_next = 7'd11;
-            7'd11: fsm_next = 7'd12;
-            7'd12: fsm_next = 7'd13;
-            7'd13: fsm_next = 7'd14;
-            7'd14: fsm_next = 7'd15;
-            7'd15: fsm_next = 7'd16;
-            7'd16: fsm_next = 7'd17;
-            7'd17: fsm_next = 7'd18;
-            7'd18: fsm_next = 7'd19;
-            7'd19: fsm_next = 7'd20;
-            7'd20: fsm_next = 7'd21;
-            7'd21: fsm_next = 7'd22;
-            7'd22: fsm_next = 7'd23;
-            7'd23: fsm_next = 7'd24;
-            7'd24: fsm_next = 7'd25;
-            7'd25: fsm_next = 7'd26;
-            7'd26: fsm_next = 7'd27;
-            7'd27: fsm_next = 7'd28;
-            7'd28: fsm_next = 7'd29;
-            7'd29: fsm_next = 7'd30;
-            7'd30: fsm_next = 7'd31;
-            7'd31: fsm_next = 7'd32;
-            7'd32: fsm_next = 7'd33;
-            7'd33: fsm_next = 7'd34;
-            7'd34: fsm_next = 7'd35;
-            7'd35: fsm_next = 7'd36;
-            7'd36: fsm_next = 7'd37;
-            7'd37: fsm_next = 7'd38;
-            7'd38: fsm_next = 7'd39;
-            7'd39: fsm_next = 7'd40;
-            7'd40: fsm_next = 7'd41;
-            7'd41: fsm_next = 7'd42;
-            7'd42: fsm_next = 7'd43;
-            7'd43: fsm_next = 7'd44;
-            7'd44: fsm_next = 7'd45;
-            7'd45: fsm_next = 7'd46;
-            7'd46: fsm_next = 7'd47;
-            7'd47: fsm_next = 7'd48;
-            7'd48: fsm_next = 7'd49;
-            7'd49: fsm_next = 7'd50;
-            7'd50: fsm_next = 7'd51;
-            7'd51: fsm_next = 7'd52;
-            7'd52: fsm_next = 7'd53;
-            7'd53: fsm_next = 7'd54;
-            7'd54: fsm_next = 7'd55;
-            7'd55: fsm_next = 7'd56;
-            7'd56: fsm_next = 7'd57;
-            7'd57: fsm_next = 7'd58;
-            7'd58: fsm_next = 7'd59;
-            7'd59: fsm_next = 7'd60;
-            7'd60: fsm_next = 7'd61;
-            7'd61: fsm_next = 7'd62;
-            7'd62: fsm_next = 7'd63;
-            7'd63: fsm_next = 7'd64;
-            7'd64: fsm_next = 7'd65;
-            7'd65: fsm_next = 7'd00;
-            default: fsm_next = 7'd0;
-        endcase
-    end 
+    assign fsm_next = (fsm==7'b0)?((div_valid)?7'd1:7'd0):((fsm==7'd65)?7'd0:(fsm+7'd1));
+
 
     assign out_ready = (fsm==7'b0);
     assign out_valid = (fsm==7'd65);
@@ -2056,7 +2005,7 @@ module ysyx_050518_div(
     assign _add_in2_r = ~add_in2_r;
     wire c_out_add_0;
 
-    `ifdef full_div;
+    `ifdef full_div
     
     ysyx_050518_add   add0(.in1(add_in1_r[63:0]),.in2(_add_in2_r[63:0]),.c_in(1'b1),.out(add_out[63:0]),.c_out(c_out_add_0));
     ysyx_050518_add   add1(.in1(add_in1_r[127:64]),.in2(_add_in2_r[127:64]),.c_in(c_out_add_0),.out(add_out[127:64]),.c_out());
@@ -2100,80 +2049,18 @@ module ysyx_050518_div(
 
     always@(posedge clk)begin
         if(!rst_n)begin
-            ans <= 64'b0;
+            ans <= 'b0;
         end
         else begin
-            case(fsm)
-            7'd0:   ans <= 64'b0;
-            7'd1: ans <= {!add_out[127],63'b0};
-            7'd2: ans <= {ans[63],!add_out[127],62'b0};
-            7'd3: ans <= {ans[63:62],!add_out[127],61'b0};
-            7'd4: ans <= {ans[63:61],!add_out[127],60'b0};
-            7'd5: ans <= {ans[63:60],!add_out[127],59'b0};
-            7'd6: ans <= {ans[63:59],!add_out[127],58'b0};
-            7'd7: ans <= {ans[63:58],!add_out[127],57'b0};
-            7'd8: ans <= {ans[63:57],!add_out[127],56'b0};
-            7'd9: ans <= {ans[63:56],!add_out[127],55'b0};
-            7'd10: ans <= {ans[63:55],!add_out[127],54'b0};
-            7'd11: ans <= {ans[63:54],!add_out[127],53'b0};
-            7'd12: ans <= {ans[63:53],!add_out[127],52'b0};
-            7'd13: ans <= {ans[63:52],!add_out[127],51'b0};
-            7'd14: ans <= {ans[63:51],!add_out[127],50'b0};
-            7'd15: ans <= {ans[63:50],!add_out[127],49'b0};
-            7'd16: ans <= {ans[63:49],!add_out[127],48'b0};
-            7'd17: ans <= {ans[63:48],!add_out[127],47'b0};
-            7'd18: ans <= {ans[63:47],!add_out[127],46'b0};
-            7'd19: ans <= {ans[63:46],!add_out[127],45'b0};
-            7'd20: ans <= {ans[63:45],!add_out[127],44'b0};
-            7'd21: ans <= {ans[63:44],!add_out[127],43'b0};
-            7'd22: ans <= {ans[63:43],!add_out[127],42'b0};
-            7'd23: ans <= {ans[63:42],!add_out[127],41'b0};
-            7'd24: ans <= {ans[63:41],!add_out[127],40'b0};
-            7'd25: ans <= {ans[63:40],!add_out[127],39'b0};
-            7'd26: ans <= {ans[63:39],!add_out[127],38'b0};
-            7'd27: ans <= {ans[63:38],!add_out[127],37'b0};
-            7'd28: ans <= {ans[63:37],!add_out[127],36'b0};
-            7'd29: ans <= {ans[63:36],!add_out[127],35'b0};
-            7'd30: ans <= {ans[63:35],!add_out[127],34'b0};
-            7'd31: ans <= {ans[63:34],!add_out[127],33'b0};
-            7'd32: ans <= {ans[63:33],!add_out[127],32'b0};
-            7'd33: ans <= {ans[63:32],!add_out[127],31'b0};
-            7'd34: ans <= {ans[63:31],!add_out[127],30'b0};
-            7'd35: ans <= {ans[63:30],!add_out[127],29'b0};
-            7'd36: ans <= {ans[63:29],!add_out[127],28'b0};
-            7'd37: ans <= {ans[63:28],!add_out[127],27'b0};
-            7'd38: ans <= {ans[63:27],!add_out[127],26'b0};
-            7'd39: ans <= {ans[63:26],!add_out[127],25'b0};
-            7'd40: ans <= {ans[63:25],!add_out[127],24'b0};
-            7'd41: ans <= {ans[63:24],!add_out[127],23'b0};
-            7'd42: ans <= {ans[63:23],!add_out[127],22'b0};
-            7'd43: ans <= {ans[63:22],!add_out[127],21'b0};
-            7'd44: ans <= {ans[63:21],!add_out[127],20'b0};
-            7'd45: ans <= {ans[63:20],!add_out[127],19'b0};
-            7'd46: ans <= {ans[63:19],!add_out[127],18'b0};
-            7'd47: ans <= {ans[63:18],!add_out[127],17'b0};
-            7'd48: ans <= {ans[63:17],!add_out[127],16'b0};
-            7'd49: ans <= {ans[63:16],!add_out[127],15'b0};
-            7'd50: ans <= {ans[63:15],!add_out[127],14'b0};
-            7'd51: ans <= {ans[63:14],!add_out[127],13'b0};
-            7'd52: ans <= {ans[63:13],!add_out[127],12'b0};
-            7'd53: ans <= {ans[63:12],!add_out[127],11'b0};
-            7'd54: ans <= {ans[63:11],!add_out[127],10'b0};
-            7'd55: ans <= {ans[63:10],!add_out[127],9'b0};
-            7'd56: ans <= {ans[63:9],!add_out[127],8'b0};
-            7'd57: ans <= {ans[63:8],!add_out[127],7'b0};
-            7'd58: ans <= {ans[63:7],!add_out[127],6'b0};
-            7'd59: ans <= {ans[63:6],!add_out[127],5'b0};
-            7'd60: ans <= {ans[63:5],!add_out[127],4'b0};
-            7'd61: ans <= {ans[63:4],!add_out[127],3'b0};
-            7'd62: ans <= {ans[63:3],!add_out[127],2'b0};
-            7'd63: ans <= {ans[63:2],!add_out[127],1'b0};
-            7'd64: ans <= {ans[63:1],!add_out[127]};
-            default: ans <= 64'b0;
-            endcase
+            if(fsm!='d0)begin
+                ans <= {ans[62:0],!add_out[127]};
+            end
+            else begin
+                ans <= 'b0;
+            end
         end
     end
-
+    
     wire [63:0]q_signed;
 
     assign quotient = div_w_r?(sign_r[0]?ans:(({{32{1'b1}},~(ans[31:0])})+64'b1)):(sign_r[0]?ans:((~ans)+64'b1));

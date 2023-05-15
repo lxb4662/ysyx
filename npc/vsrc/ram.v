@@ -1,3 +1,4 @@
+
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company: 
@@ -62,7 +63,7 @@ module ram_tb(
 endmodule
 
 `define TAG_DATA_WIDTH  23
-module tag_ram(
+module tag_ram_128(
     clk,
     rst_n,
     data_in,
@@ -103,15 +104,8 @@ always@(posedge clk)begin
     end
     else begin
         if(en)begin
-            if(write)begin
-                mem[addr][`TAG_DATA_WIDTH-3:0] <= data_in;
-            end
-            if(write_valid)begin
-                mem[addr][`TAG_DATA_WIDTH-2] <= set_valid;
-            end
-            
-            if(write_dirty)begin
-                mem[addr][`TAG_DATA_WIDTH-1] <= set_dirty;
+            if(write||write_valid||write_dirty)begin
+                mem[addr] <= {write_dirty?set_dirty:mem[addr][`TAG_DATA_WIDTH-1],write_valid?set_valid:mem[addr][`TAG_DATA_WIDTH-2],write?data_in:mem[addr][`TAG_DATA_WIDTH-3:0]};
             end
             
             data_out <= mem[addr];
@@ -124,7 +118,7 @@ end
 endmodule
 
 
-module ram(
+module ram_128(
     Q0,
     Q1,
     CLK,
@@ -229,7 +223,7 @@ endmodule
 
 
 
-module ram_(
+module ram_1(
     Q, CLK, CEN, WEN, BWEN, A, D
 );
 parameter Bits = 128;

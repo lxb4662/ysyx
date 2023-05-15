@@ -43,7 +43,7 @@ module top(
     wire                    jup;
     wire [31:0]             jup_addr;
 
-    wire [1023:0]           if_dc;
+    wire [64:0]           if_dc;
     wire                    dc_ready_in;
 
     ifu ifu(
@@ -66,7 +66,7 @@ module top(
 
 
     wire [32+64+32+1+1-1:0]       wb_ex;
-    wire [1023:0]           dc_ex;
+    wire [289:0]           dc_ex;
     dc dc(
         .clk(clk)
         ,.rst_n(rst_n)
@@ -93,7 +93,7 @@ module top(
         ,.jup_addr(jup_addr)
 
 
-        ,.dc_ex({dc_ex[1023:1],dc_ex[0]&&(!jup)})
+        ,.dc_ex({dc_ex[289:1],dc_ex[0]&&(!jup)})
         ,.sideway(sideway)
         ,.exu_ready_in(exu_ready_in)
         ,.wb(wb_ex)
@@ -105,16 +105,16 @@ module top(
     wire [1+32+64+5+1+1-1:0]   wb_ls;
 
     wire        sram2r_req;
-    wire [3:0]  sram2r_type;
+    wire [5:0]  sram2r_type;
     wire [31:0] sram2r_addr;
     wire        sram2r_rdy;
 
-    wire [127:0]sram2re_data;
+    wire [256:0]sram2re_data;
     wire        sram2re_valid;
 
     wire [31:0]     sram2w_addr;
-    wire [127:0]    sram2w_data;
-    wire [3:0]      sram2w_type;
+    wire [256:0]    sram2w_data;
+    wire [5:0]      sram2w_type;
     wire            sram2w_req;
     wire [15:0]     sram2w_strb;
 
@@ -125,7 +125,7 @@ module top(
     lsu lsu(
         .clk(clk)
         ,.rst_n(rst_n)
-        ,.dc_ls({dc_ex[1023:1],dc_ex[0]&&(!jup)})
+        ,.dc_ls({dc_ex[289:1],dc_ex[0]&&(!jup)})
         ,.sideway(sideway[64+5+1-1:0])
 
         ,.lsu_ready_in(lsu_ready_in)
@@ -135,7 +135,7 @@ module top(
         ,.cache_bus_rsp({dcache_data_out,dcache_addr_ok,dcache_data_ok})
 
         ,.sram_busr_out({sram2r_addr,sram2r_type,sram2r_req})
-        ,.sram_busr_in({sram2r_rdy,sram2re_data,sram2re_valid})
+        ,.sram_busr_in({sram2re_data,sram2r_rdy,sram2re_valid})
 
         ,.sram_busw_out({sram2w_addr,sram2w_data,sram2w_type,sram2w_strb,sram2w_req})
         ,.sram_busw_in({sram2w_rdy})
@@ -176,11 +176,11 @@ module top(
     assign re = {icache_data_out[31:0],icache_data_ok};
 
     wire        sram0r_req;
-    wire [3:0]  sram0r_type;
+    wire [5:0]  sram0r_type;
     wire [31:0] sram0r_addr;
     wire        sram0r_rdy;
 
-    wire [127:0]sram0re_data;
+    wire [255:0]sram0re_data;
     wire        sram0re_valid;
     cache_top icache(
         .clk(clk)
@@ -228,16 +228,16 @@ module top(
 
 
     wire        sram1r_req;
-    wire [3:0]  sram1r_type;
+    wire [5:0]  sram1r_type;
     wire [31:0] sram1r_addr;
     wire        sram1r_rdy;
 
-    wire [127:0]sram1re_data;
+    wire [255:0]sram1re_data;
     wire        sram1re_valid;
 
     wire [31:0]     sram1w_addr;
-    wire [127:0]    sram1w_data;
-    wire [3:0]      sram1w_type;
+    wire [255:0]    sram1w_data;
+    wire [5:0]      sram1w_type;
     wire            sram1w_req;
     wire [15:0]     sram1w_strb;
 
@@ -341,16 +341,16 @@ module top(
 
 
     wire [31:0] sramr_addr;
-    wire [3:0]  sramr_type;
+    wire [5:0]  sramr_type;
     wire        sramr_req;
     wire        sramr_rdy;
 
-    wire [127:0]    sramre_data;
+    wire [255:0]    sramre_data;
     wire            sramre_valid;
 
     wire [31:0]     sramw_addr;
-    wire [127:0]    sramw_data;
-    wire [3:0]      sramw_type;
+    wire [255:0]    sramw_data;
+    wire [5:0]      sramw_type;
     wire [15:0]     sramw_strb;
     wire            sramw_req;
     wire            sramw_rdy;
