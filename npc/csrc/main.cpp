@@ -13,7 +13,7 @@ using namespace std;
 //#define TRACE
 //#define ITRACE
 //#define PRINT
-//#define DIFF
+#define DIFF
 //#define mtrace
 #include <unistd.h>
 
@@ -271,7 +271,7 @@ int main(int argc, char** argv, char** env) {
       break;
     };
     #ifdef TRACE
-    if(contextp->time()%100000==0){
+    if(contextp->time()%800000==0){
       //printf("new round\n");
       tfp->close();
       tfp->open("wave.vcd"); //设置输出的文件wave.vcd
@@ -279,11 +279,11 @@ int main(int argc, char** argv, char** env) {
     }
     #endif
     if(clk_cnt%10000000==0){
-    	printf("clock pre second %d \n",(clk_cnt/(get_second()-begin_second)));
+    	printf("clock pre second %d \n",(clk_cnt/(get_second()-begin_time)));
     }
   }
 
-  sdb_mainloop();
+  //sdb_mainloop();
 
 
   for (int i =0;i<=500;i++){

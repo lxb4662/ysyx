@@ -8,8 +8,10 @@ static uint8_t pmem[0x8000000] = {};
 long long mem_read(long long a, int len){
     long long unsigned int addr = a;
     //printf("mem read\n");
+
     if( addr >= 0x80000000 && addr<=(0x80000000+0x8000000)){
-          addr = addr - 0x80000000;
+        addr = addr - 0x80000000;
+
         switch(len){
             case 1: return pmem[addr];
             case 2: return *((short *)(pmem+addr));
@@ -38,6 +40,7 @@ long long mem_read(long long a, int len){
       return (300+(400<<16));
     }  
     if((addr==0xa0000104)){
+
       return vgtctl[1];
     }
     if(addr == 0xa0000060){
@@ -166,12 +169,11 @@ void status_cpy(int addr, int a1, int a0, int write, int pc, int incache,int val
 
 
 void mtrace(int pc,int addr, int a0, int a1, int len){
-  #ifdef mtrace
-		fstream f;
+		/*fstream f;
 	//追加写入,在原来基础上加了ios::app 
 	  f.open("data.txt",ios::out|ios::app);
 	//输入你想写入的内容 
 	  f<<"pc:"<<hex<<pc<<"\taddr"<<hex<<addr<<"\tdata:"<<hex<<a1<<hex<<a0<<"\tlen:"<<len<<endl;
-    f.close();
-    #endif
+    f.close();*/
+    
 }
