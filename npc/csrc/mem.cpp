@@ -7,7 +7,6 @@ static uint8_t pmem[0x8000000] = {};
 
 long long mem_read(long long a, int len){
     long long unsigned int addr = a;
-    //printf("mem read\n");
 
     if( addr >= 0x80000000 && addr<=(0x80000000+0x8000000)){
         addr = addr - 0x80000000;
@@ -104,11 +103,8 @@ int mem_write(long long a, int len, long long data){
       vgtctl[1] = data;
       if(data==1){
         update_screen();
-        //printf("update screen\n");
       }
   }
-  //printf("mem write %llx %d %llx \n",a,len,data);
-
   return 1;
 }
 

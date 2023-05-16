@@ -489,7 +489,7 @@ module mem2axi(
     assign aw_brust= `AXI_BRUS_WIDTH'b01;
 
 
-    reg size_reg;
+    reg [`AXI_SIZE_WIDTH-1:0] size_reg;
     always@(*)begin
         case(`AXI_SIZE_WIDTH)
             32: size_reg = `AXI_SIZE_WIDTH'b10;
@@ -538,13 +538,13 @@ module data_read(
 
     always@(posedge clk)begin
         if(!rst_n)begin
-            data <= 128'd0;
+            data <= 'd0;
         end
         else begin
             case (d_type)
                 4'h0:   data <= data0;
                 4'h1:   data <= data1;
-                default:data  <= 128'd0;
+                default:data  <= 'd0;
             endcase
         end
     end
@@ -578,7 +578,7 @@ module data_read(
         case(d_type)
             4'd0: data_out = data0;
             4'd1: data_out = data1;
-            default : data_out = 128'd0;
+            default : data_out = 'd0;
         endcase
     end
 
@@ -603,9 +603,9 @@ always@(*)begin
         8'd1:   data_out_type0 = data_in[63:32];
         8'd2:   data_out_type0 = data_in[95:64];
         8'd3:   data_out_type0 = data_in[127:96];
-        8'd4:   data_out_type0 = data_in[160:128];
-        8'd5:   data_out_type0 = data_in[192:160];
-        8'd6:   data_out_type0 = data_in[224:192];
+        8'd4:   data_out_type0 = data_in[159:128];
+        8'd5:   data_out_type0 = data_in[191:160];
+        8'd6:   data_out_type0 = data_in[223:192];
         8'd7:   data_out_type0 = data_in[255:224];
         default:data_out_type0 = 32'd0;
     endcase

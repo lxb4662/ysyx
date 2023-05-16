@@ -71,7 +71,7 @@ module top(
         .clk(clk)
         ,.rst_n(rst_n)
 
-        ,.if_dc({if_dc[1023:1],if_dc[0]&&(~jup)})
+        ,.if_dc({if_dc[64:1],if_dc[0]&&(~jup)})
 
         ,.wb_dc(sideway)
 
@@ -109,11 +109,11 @@ module top(
     wire [31:0] sram2r_addr;
     wire        sram2r_rdy;
 
-    wire [256:0]sram2re_data;
+    wire [255:0]sram2re_data;
     wire        sram2re_valid;
 
     wire [31:0]     sram2w_addr;
-    wire [256:0]    sram2w_data;
+    wire [255:0]    sram2w_data;
     wire [5:0]      sram2w_type;
     wire            sram2w_req;
     wire [15:0]     sram2w_strb;

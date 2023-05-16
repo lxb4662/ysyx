@@ -95,11 +95,79 @@ void run_one_clk_soc(Vtop_soc *top,VerilatedVcdC* tfp,VerilatedContext* contextp
   #endif
 }
 void print_riscv(riscv *riscv){
-  printf("PC: %llx\n",riscv->pc);
+  printf("PC: %lx\n",riscv->pc);
   for(int i =0;i<32;i++){
-    printf("reg %d : %llx\n",i,riscv->reg[i]);
+    printf("reg %d : %lx\n",i,riscv->reg[i]);
   }
 }
+
+int run_one_without_dump(Vtop_soc *top){
+{
+  riscv last_npc;
+
+  last_npc = riscv(npc);
+
+  top->clock = 0;
+  top->reset = 0;
+  top->eval();
+
+
+  top->clock = 1;
+  top->reset = 0;
+  top->eval();
+
+  #ifdef DIFF
+  if(npc.valid){
+    if(npc.incache){
+      difftest_exec(1);
+      get_nemu();
+      for(int i = 1;i<32;i++){
+        if(npc.reg[i]!=nemu.reg[i]){
+          printf("reg %d is error npc is %16lx\n",i,npc.reg[i]);
+          printf("*********************NEMU*****************\n");
+          print_riscv(&nemu);          
+          printf("*********************NPC *****************\n");
+          print_riscv(&last_npc);
+          return 0;
+        }
+      }
+    }
+    else {
+      riscv last_npc;
+      while(1){
+          last_npc.copy(&npc);
+          top->clock = 0;
+          top->reset = 0;
+          top->eval();
+
+
+          top->clock = 1;
+          top->reset = 0;
+          top->eval();
+          if(npc.valid&&npc.incache){
+            break;
+          }
+      }
+      sync_to_nemu(npc.pc,&last_npc);
+      difftest_exec(1);      
+      get_nemu(); 
+      for(int i = 1;i<32;i++){
+        if(npc.reg[i]!=nemu.reg[i]){
+          printf("reg %d is error npc is %16lx\n",i,npc.reg[i]);
+          return 0;
+        }
+      }
+    }
+    /*if(npc.pc!=nemu.pc){
+      return 0;
+    }*/
+  }
+  #endif
+  return 1;
+}
+}
+
+
 
 
 
@@ -130,7 +198,7 @@ int run_one_clk_soc_with_test(Vtop_soc *top,VerilatedVcdC* tfp,VerilatedContext*
       get_nemu();
       for(int i = 1;i<32;i++){
         if(npc.reg[i]!=nemu.reg[i]){
-          printf("reg %d is error npc is %16x\n",i,npc.reg[i]);
+          printf("reg %d is error npc is %16lx\n",i,npc.reg[i]);
           printf("*********************NEMU*****************\n");
           print_riscv(&nemu);          
           printf("*********************NPC *****************\n");
@@ -167,7 +235,7 @@ int run_one_clk_soc_with_test(Vtop_soc *top,VerilatedVcdC* tfp,VerilatedContext*
       get_nemu(); 
       for(int i = 1;i<32;i++){
         if(npc.reg[i]!=nemu.reg[i]){
-          printf("reg %d is error npc is %16x\n",i,npc.reg[i]);
+          printf("reg %d is error npc is %16lx\n",i,npc.reg[i]);
           return 0;
         }
       }
@@ -187,26 +255,6 @@ void cut_vcd(int length){
 
 }
 
-int get_head_len()
-{
-  FILE *fp;
-  int flag = 0, file_row = 0, count = 0;
-  if((fp = fopen("wave.vcd", "r")) == NULL)
-    return -1;
-  while(!feof(fp))
-  {
-    flag = fgetc(fp);
-    if(flag == '\n')
-      count++;
-  }
-  file_row = count + 1; //加上最后一行
-  printf("row = %d\n", file_row);
-  fclose(fp);  if((fp = fopen("wave.vcd", "r")) == NULL)
-    return -1;
-  fseek(fp,0,SEEK_END);
-  int file_size = ftell(fp);
-  return file_size;
-}
 
 int prin_time() {
     char len[20] = {0};
@@ -250,10 +298,6 @@ int main(int argc, char** argv, char** env) {
   tfp->open("wave.vcd"); //设置输出的文件wave.vcd
   tfp->close();
 
-
-
-  int vcd_head_len;
-  vcd_head_len = get_head_len();
   
   //sdb_mainloop();
   //////////////////////////////
@@ -267,23 +311,21 @@ int main(int argc, char** argv, char** env) {
   while(!Verilated::gotFinish()){
     clk_cnt ++;
     if(!run_one_clk_soc_with_test(top,tfp,contextp)){
-      printf("error: pc %8x\n",npc.pc);
+      printf("error: pc %8lx\n",npc.pc);
       break;
     };
     #ifdef TRACE
     if(contextp->time()%800000==0){
-      //printf("new round\n");
       tfp->close();
       tfp->open("wave.vcd"); //设置输出的文件wave.vcd
-      //cut_vcd(vcd_head_len);
     }
     #endif
     if(clk_cnt%10000000==0){
-    	printf("clock pre second %d \n",(clk_cnt/(get_second()-begin_time)));
+    	printf("clock pre second %ld \n",(clk_cnt/(get_second()-begin_time)));
     }
   }
 
-  //sdb_mainloop();
+  sdb_mainloop();
 
 
   for (int i =0;i<=500;i++){

@@ -230,8 +230,8 @@ module cache_top(
             4'h3: tag_ctl0 = {`TAG_DATA_WIDTH_d'd0,addr_index        ,1'b0      ,1'b0       ,1'b0            ,1'b0   ,1'b0           ,1'b0};
             4'h4: tag_ctl0 = {tag_reg             ,ind_reg           ,~random   ,re_valid   ,re_valid         ,1'b1   ,re_valid      ,write_reg};
             4'h5: tag_ctl0 = {`TAG_DATA_WIDTH_d'd0,ind_reg           ,1'b1      ,1'b0       ,1'b0            ,1'b0   ,hit0_reg       ,hit0_reg};       //write
-            4'h6: tag_ctl0 = {`TAG_DATA_WIDTH_d'd0,fencei_cnt[6:0]   ,1'b1      ,1'b0       ,~fencei_cnt[7]  ,1'b0   ,1'b0           ,1'b0};           //fence.i
-            4'h7: tag_ctl0 = {`TAG_DATA_WIDTH_d'd0,fenced_cnt[6:0]   ,1'b1      ,1'b0       ,1'b0            ,1'b0   ,~fenced_cnt[7] ,1'b0};           //fence.d
+            4'h6: tag_ctl0 = {`TAG_DATA_WIDTH_d'd0,fencei_cnt[5:0]   ,1'b1      ,1'b0       ,~fencei_cnt[7]  ,1'b0   ,1'b0           ,1'b0};           //fence.i
+            4'h7: tag_ctl0 = {`TAG_DATA_WIDTH_d'd0,fenced_cnt[5:0]   ,1'b1      ,1'b0       ,1'b0            ,1'b0   ,~fenced_cnt[7] ,1'b0};           //fence.d
             default: tag_ctl0 = {`TAG_DATA_WIDTH_d'd0,`INDX_WIDTH'd0     ,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0};
         endcase
     end
@@ -248,8 +248,8 @@ module cache_top(
             4'h3: tag_ctl1 = {`TAG_DATA_WIDTH_d'd0,addr_index                   ,1'b0      ,1'b0       ,1'b0   ,1'b0   ,1'b0   ,1'b0};
             4'h4: tag_ctl1 = {tag_reg           ,ind_reg                      ,random    ,re_valid   ,re_valid,1'b1   ,re_valid   ,write_reg};
             4'h5: tag_ctl1 = {`TAG_DATA_WIDTH_d'd0,ind_reg           ,1'b1      ,1'b0       ,1'b0            ,1'b0   ,hit1_reg       ,hit1_reg};       //write
-            4'h6: tag_ctl1 = {`TAG_DATA_WIDTH_d'd0,fencei_cnt[6:0]   ,1'b1      ,1'b0       ,~fencei_cnt[7]  ,1'b0   ,1'b0           ,1'b0};           //fence.i
-            4'h7: tag_ctl1 = {`TAG_DATA_WIDTH_d'd0,fenced_cnt[6:0]   ,1'b1      ,1'b0       ,1'b0            ,1'b0   ,~fenced_cnt[7] ,1'b0};           //fence.d
+            4'h6: tag_ctl1 = {`TAG_DATA_WIDTH_d'd0,fencei_cnt[5:0]   ,1'b1      ,1'b0       ,~fencei_cnt[7]  ,1'b0   ,1'b0           ,1'b0};           //fence.i
+            4'h7: tag_ctl1 = {`TAG_DATA_WIDTH_d'd0,fenced_cnt[5:0]   ,1'b1      ,1'b0       ,1'b0            ,1'b0   ,~fenced_cnt[7] ,1'b0};           //fence.d
             default: tag_ctl1 = {`TAG_DATA_WIDTH_d'd0,`INDX_WIDTH'd0     ,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0};
         endcase
     end
@@ -690,8 +690,8 @@ always@(*)begin
         5'b01100 : data_out = cache_data_in[159:96];
         5'b01101 : data_out = cache_data_in[167:104];
         5'b01110 : data_out = cache_data_in[175:112];
-        5'b01111 : data_out = cache_data_in[184:120];
-        5'b10000 : data_out = cache_data_in[192:128];
+        5'b01111 : data_out = cache_data_in[183:120];
+        5'b10000 : data_out = cache_data_in[191:128];
         5'b10001 : data_out = cache_data_in[199:136];
         5'b10010 : data_out = cache_data_in[207:144];
         5'b10011 : data_out = cache_data_in[215:152];
@@ -855,7 +855,7 @@ module tag_ram(
     data_out
 );
 
-parameter ADDR_WIDTH = 7;
+parameter ADDR_WIDTH = 6;
 parameter WORD_DEPTH = 64;
 
 input clk;
