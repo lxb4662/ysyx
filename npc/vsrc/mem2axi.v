@@ -314,7 +314,7 @@ module mem2axi(
 
     assign ar_valid = read_fsm==6'b1;
     assign ar_brust = `AXI_BRUS_WIDTH'b01;
-    assign ar_len   = support_brust?ar_cnt_i:`AXI_LEN_WIDTH'b0;                    
+    assign ar_len   = support_brust?ar_cnt_i[`AXI_LEN_WIDTH-1:0]:`AXI_LEN_WIDTH'b0;                    
     assign ar_size  = support_64bits?`AXI_SIZE_WIDTH'b011:`AXI_SIZE_WIDTH'b010;
     
     assign r_ready = (read_fsm_r == 6'b1)?1'b1:1'b0;
@@ -489,14 +489,7 @@ module mem2axi(
     assign aw_brust= `AXI_BRUS_WIDTH'b01;
 
 
-    reg [`AXI_SIZE_WIDTH-1:0] size_reg;
-    always@(*)begin
-        case(`AXI_SIZE_WIDTH)
-            32: size_reg = `AXI_SIZE_WIDTH'b10;
-            64: size_reg = `AXI_SIZE_WIDTH'b11;
-            128:size_reg = `AXI_SIZE_WIDTH'b100;
-        endcase
-    end
+ 
     
 
 
@@ -567,9 +560,9 @@ module data_read(
     always@(*)begin
         case(cnt)
             8'h00: data1  = {data[255:64],data_in0[63:0]};
-            8'h01: data1  = {data_in0[63:0],data[63:0]};
-            8'h02: data1  = {data_in0[63:0],data[63:0]};
-            8'h03: data1  = {data_in0[63:0],data[63:0]};
+            8'h01: data1  = {data[255:128],data_in0[63:0],data[63:0]};
+            8'h02: data1  = {data[255:192],data_in0[63:0],data[127:0]};
+            8'h03: data1  = {data_in0[63:0],data[191:0]};
             default: data1 = 'd0;
         endcase
     end

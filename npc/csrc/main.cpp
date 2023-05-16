@@ -13,7 +13,7 @@ using namespace std;
 //#define TRACE
 //#define ITRACE
 //#define PRINT
-#define DIFF
+//#define DIFF
 //#define mtrace
 #include <unistd.h>
 
@@ -297,6 +297,7 @@ int main(int argc, char** argv, char** env) {
   top->trace(tfp, 0); //
   tfp->open("wave.vcd"); //设置输出的文件wave.vcd
   tfp->close();
+
 
   
   //sdb_mainloop();

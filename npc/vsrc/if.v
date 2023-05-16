@@ -461,7 +461,12 @@ module exu(
 
     wire [63:0] shift_arw;
     wire [63:0] shift_srl;
-    ysyx_050518_shift ysyx_050518_shift(.in0((alu_w||alu_iw)?{32'b0,alu_in1[31:0]}:alu_in1),.in1((alu_w||alu_iw)?{59'd0,alu_in2[4:0]}:alu_in2),.sra(sra),.sra_left_in((alu_w||alu_iw)?alu_in1[31]:alu_in1[63]),.logic_r(shift_srl),.logic_l(alu_sll),.a_r_w(shift_arw));
+    ysyx_050518_shift ysyx_050518_shift(
+    .in0((alu_w||alu_iw)?{32'b0,alu_in1[31:0]}:alu_in1)
+    ,.in1((alu_w||alu_iw)?{59'd0,alu_in2[4:0]}:alu_in2)
+    ,.sra(sra),.sra_left_in((alu_w||alu_iw)?alu_in1[31]:alu_in1[63]),.logic_r(shift_srl)
+    ,.logic_l(alu_sll)
+    ,.a_r_w(shift_arw));
 
     assign alu_srl = (alu_w||alu_iw)?shift_arw:shift_srl;
 
@@ -776,7 +781,7 @@ module lsu(
     ///////////////////////////////////////////
 
     wire [31:0] ls_addr;
-    assign ls_addr = rs1_sw + imm;
+    assign ls_addr = rs1_sw[31:0] + imm[31:0];
 
     wire [63:0] store_data = rs2_sw;
 
@@ -807,13 +812,13 @@ module lsu(
 
     wire [63:0] load_ext_in;
     assign load_ext_in = data_ok?cache_rdata[63:0]:sram_re_data[63:0];
-
+/*
     always@(posedge clk)begin
         if(store&&valid_i&&addr_ok)begin
             mtrace(pc,ls_addr,rs2_sw[31:0],rs2_sw[63:32],func3[1:0]);
         end
     end
-
+*/
 
     load_ext load_ext(
         .func3(func3)
@@ -976,7 +981,7 @@ module ysyx_050518_shift(
     input               sra_left_in,
     output reg [63:0]       logic_r,
     output reg [63:0]       logic_l,
-    output reg [63:0]       a_r_w,
+    output reg [63:0]       a_r_w
 );
 
 wire [5:0]  shamt;
@@ -1799,7 +1804,7 @@ module csr_reg(
     output [63:0]   mstatus,
     output [63:0]   mtvec,
     output [63:0]   mip,
-    output [63:0]   mie,
+    output [63:0]   mie
     
 
 
@@ -1888,199 +1893,3 @@ module csr_addr_conveter(
     end
 endmodule
 
-
-
-module ysyx_050518_shift(
-    input [63:0]        in0,
-    input [63:0]        in1,
-    input               sra,
-    input               sra_left_in,
-    output reg [63:0]       logic_r,
-    output reg [63:0]       logic_l,
-    output reg [63:0]       a_r_w,
-);
-
-wire [5:0]  shamt;
-
-assign shamt = in1[5:0];
-
-always@(*)begin
-    case(shamt)
-        6'd0:logic_r = {{0{sra?sra_left_in:1'b0}},in0[63:0]};
-        6'd1:logic_r = {{1{sra?sra_left_in:1'b0}},in0[63:1]};
-        6'd2:logic_r = {{2{sra?sra_left_in:1'b0}},in0[63:2]};
-        6'd3:logic_r = {{3{sra?sra_left_in:1'b0}},in0[63:3]};
-        6'd4:logic_r = {{4{sra?sra_left_in:1'b0}},in0[63:4]};
-        6'd5:logic_r = {{5{sra?sra_left_in:1'b0}},in0[63:5]};
-        6'd6:logic_r = {{6{sra?sra_left_in:1'b0}},in0[63:6]};
-        6'd7:logic_r = {{7{sra?sra_left_in:1'b0}},in0[63:7]};
-        6'd8:logic_r = {{8{sra?sra_left_in:1'b0}},in0[63:8]};
-        6'd9:logic_r = {{9{sra?sra_left_in:1'b0}},in0[63:9]};
-        6'd10:logic_r = {{10{sra?sra_left_in:1'b0}},in0[63:10]};
-        6'd11:logic_r = {{11{sra?sra_left_in:1'b0}},in0[63:11]};
-        6'd12:logic_r = {{12{sra?sra_left_in:1'b0}},in0[63:12]};
-        6'd13:logic_r = {{13{sra?sra_left_in:1'b0}},in0[63:13]};
-        6'd14:logic_r = {{14{sra?sra_left_in:1'b0}},in0[63:14]};
-        6'd15:logic_r = {{15{sra?sra_left_in:1'b0}},in0[63:15]};
-        6'd16:logic_r = {{16{sra?sra_left_in:1'b0}},in0[63:16]};
-        6'd17:logic_r = {{17{sra?sra_left_in:1'b0}},in0[63:17]};
-        6'd18:logic_r = {{18{sra?sra_left_in:1'b0}},in0[63:18]};
-        6'd19:logic_r = {{19{sra?sra_left_in:1'b0}},in0[63:19]};
-        6'd20:logic_r = {{20{sra?sra_left_in:1'b0}},in0[63:20]};
-        6'd21:logic_r = {{21{sra?sra_left_in:1'b0}},in0[63:21]};
-        6'd22:logic_r = {{22{sra?sra_left_in:1'b0}},in0[63:22]};
-        6'd23:logic_r = {{23{sra?sra_left_in:1'b0}},in0[63:23]};
-        6'd24:logic_r = {{24{sra?sra_left_in:1'b0}},in0[63:24]};
-        6'd25:logic_r = {{25{sra?sra_left_in:1'b0}},in0[63:25]};
-        6'd26:logic_r = {{26{sra?sra_left_in:1'b0}},in0[63:26]};
-        6'd27:logic_r = {{27{sra?sra_left_in:1'b0}},in0[63:27]};
-        6'd28:logic_r = {{28{sra?sra_left_in:1'b0}},in0[63:28]};
-        6'd29:logic_r = {{29{sra?sra_left_in:1'b0}},in0[63:29]};
-        6'd30:logic_r = {{30{sra?sra_left_in:1'b0}},in0[63:30]};
-        6'd31:logic_r = {{31{sra?sra_left_in:1'b0}},in0[63:31]};
-        6'd32:logic_r = {{32{sra?sra_left_in:1'b0}},in0[63:32]};
-        6'd33:logic_r = {{33{sra?sra_left_in:1'b0}},in0[63:33]};
-        6'd34:logic_r = {{34{sra?sra_left_in:1'b0}},in0[63:34]};
-        6'd35:logic_r = {{35{sra?sra_left_in:1'b0}},in0[63:35]};
-        6'd36:logic_r = {{36{sra?sra_left_in:1'b0}},in0[63:36]};
-        6'd37:logic_r = {{37{sra?sra_left_in:1'b0}},in0[63:37]};
-        6'd38:logic_r = {{38{sra?sra_left_in:1'b0}},in0[63:38]};
-        6'd39:logic_r = {{39{sra?sra_left_in:1'b0}},in0[63:39]};
-        6'd40:logic_r = {{40{sra?sra_left_in:1'b0}},in0[63:40]};
-        6'd41:logic_r = {{41{sra?sra_left_in:1'b0}},in0[63:41]};
-        6'd42:logic_r = {{42{sra?sra_left_in:1'b0}},in0[63:42]};
-        6'd43:logic_r = {{43{sra?sra_left_in:1'b0}},in0[63:43]};
-        6'd44:logic_r = {{44{sra?sra_left_in:1'b0}},in0[63:44]};
-        6'd45:logic_r = {{45{sra?sra_left_in:1'b0}},in0[63:45]};
-        6'd46:logic_r = {{46{sra?sra_left_in:1'b0}},in0[63:46]};
-        6'd47:logic_r = {{47{sra?sra_left_in:1'b0}},in0[63:47]};
-        6'd48:logic_r = {{48{sra?sra_left_in:1'b0}},in0[63:48]};
-        6'd49:logic_r = {{49{sra?sra_left_in:1'b0}},in0[63:49]};
-        6'd50:logic_r = {{50{sra?sra_left_in:1'b0}},in0[63:50]};
-        6'd51:logic_r = {{51{sra?sra_left_in:1'b0}},in0[63:51]};
-        6'd52:logic_r = {{52{sra?sra_left_in:1'b0}},in0[63:52]};
-        6'd53:logic_r = {{53{sra?sra_left_in:1'b0}},in0[63:53]};
-        6'd54:logic_r = {{54{sra?sra_left_in:1'b0}},in0[63:54]};
-        6'd55:logic_r = {{55{sra?sra_left_in:1'b0}},in0[63:55]};
-        6'd56:logic_r = {{56{sra?sra_left_in:1'b0}},in0[63:56]};
-        6'd57:logic_r = {{57{sra?sra_left_in:1'b0}},in0[63:57]};
-        6'd58:logic_r = {{58{sra?sra_left_in:1'b0}},in0[63:58]};
-        6'd59:logic_r = {{59{sra?sra_left_in:1'b0}},in0[63:59]};
-        6'd60:logic_r = {{60{sra?sra_left_in:1'b0}},in0[63:60]};
-        6'd61:logic_r = {{61{sra?sra_left_in:1'b0}},in0[63:61]};
-        6'd62:logic_r = {{62{sra?sra_left_in:1'b0}},in0[63:62]};
-        6'd63:logic_r = {{63{sra?sra_left_in:1'b0}},in0[63:63]};
-    endcase
-end
-
-
-always@(*)begin
-    case(shamt)
-        6'd0:logic_l = {in0[63:0],{0{1'b0}}};
-        6'd1:logic_l = {in0[62:0],{1{1'b0}}};
-        6'd2:logic_l = {in0[61:0],{2{1'b0}}};
-        6'd3:logic_l = {in0[60:0],{3{1'b0}}};
-        6'd4:logic_l = {in0[59:0],{4{1'b0}}};
-        6'd5:logic_l = {in0[58:0],{5{1'b0}}};
-        6'd6:logic_l = {in0[57:0],{6{1'b0}}};
-        6'd7:logic_l = {in0[56:0],{7{1'b0}}};
-        6'd8:logic_l = {in0[55:0],{8{1'b0}}};
-        6'd9:logic_l = {in0[54:0],{9{1'b0}}};
-        6'd10:logic_l = {in0[53:0],{10{1'b0}}};
-        6'd11:logic_l = {in0[52:0],{11{1'b0}}};
-        6'd12:logic_l = {in0[51:0],{12{1'b0}}};
-        6'd13:logic_l = {in0[50:0],{13{1'b0}}};
-        6'd14:logic_l = {in0[49:0],{14{1'b0}}};
-        6'd15:logic_l = {in0[48:0],{15{1'b0}}};
-        6'd16:logic_l = {in0[47:0],{16{1'b0}}};
-        6'd17:logic_l = {in0[46:0],{17{1'b0}}};
-        6'd18:logic_l = {in0[45:0],{18{1'b0}}};
-        6'd19:logic_l = {in0[44:0],{19{1'b0}}};
-        6'd20:logic_l = {in0[43:0],{20{1'b0}}};
-        6'd21:logic_l = {in0[42:0],{21{1'b0}}};
-        6'd22:logic_l = {in0[41:0],{22{1'b0}}};
-        6'd23:logic_l = {in0[40:0],{23{1'b0}}};
-        6'd24:logic_l = {in0[39:0],{24{1'b0}}};
-        6'd25:logic_l = {in0[38:0],{25{1'b0}}};
-        6'd26:logic_l = {in0[37:0],{26{1'b0}}};
-        6'd27:logic_l = {in0[36:0],{27{1'b0}}};
-        6'd28:logic_l = {in0[35:0],{28{1'b0}}};
-        6'd29:logic_l = {in0[34:0],{29{1'b0}}};
-        6'd30:logic_l = {in0[33:0],{30{1'b0}}};
-        6'd31:logic_l = {in0[32:0],{31{1'b0}}};
-        6'd32:logic_l = {in0[31:0],{32{1'b0}}};
-        6'd33:logic_l = {in0[30:0],{33{1'b0}}};
-        6'd34:logic_l = {in0[29:0],{34{1'b0}}};
-        6'd35:logic_l = {in0[28:0],{35{1'b0}}};
-        6'd36:logic_l = {in0[27:0],{36{1'b0}}};
-        6'd37:logic_l = {in0[26:0],{37{1'b0}}};
-        6'd38:logic_l = {in0[25:0],{38{1'b0}}};
-        6'd39:logic_l = {in0[24:0],{39{1'b0}}};
-        6'd40:logic_l = {in0[23:0],{40{1'b0}}};
-        6'd41:logic_l = {in0[22:0],{41{1'b0}}};
-        6'd42:logic_l = {in0[21:0],{42{1'b0}}};
-        6'd43:logic_l = {in0[20:0],{43{1'b0}}};
-        6'd44:logic_l = {in0[19:0],{44{1'b0}}};
-        6'd45:logic_l = {in0[18:0],{45{1'b0}}};
-        6'd46:logic_l = {in0[17:0],{46{1'b0}}};
-        6'd47:logic_l = {in0[16:0],{47{1'b0}}};
-        6'd48:logic_l = {in0[15:0],{48{1'b0}}};
-        6'd49:logic_l = {in0[14:0],{49{1'b0}}};
-        6'd50:logic_l = {in0[13:0],{50{1'b0}}};
-        6'd51:logic_l = {in0[12:0],{51{1'b0}}};
-        6'd52:logic_l = {in0[11:0],{52{1'b0}}};
-        6'd53:logic_l = {in0[10:0],{53{1'b0}}};
-        6'd54:logic_l = {in0[9:0],{54{1'b0}}};
-        6'd55:logic_l = {in0[8:0],{55{1'b0}}};
-        6'd56:logic_l = {in0[7:0],{56{1'b0}}};
-        6'd57:logic_l = {in0[6:0],{57{1'b0}}};
-        6'd58:logic_l = {in0[5:0],{58{1'b0}}};
-        6'd59:logic_l = {in0[4:0],{59{1'b0}}};
-        6'd60:logic_l = {in0[3:0],{60{1'b0}}};
-        6'd61:logic_l = {in0[2:0],{61{1'b0}}};
-        6'd62:logic_l = {in0[1:0],{62{1'b0}}};
-        6'd63:logic_l = {in0[0:0],{63{1'b0}}};
-    endcase
-end
-
-always@(*)begin
-    case(shamt)
-        6'd0:a_r_w = {32'D0,{0{sra?sra_left_in:1'b0}},in0[31:0]};
-        6'd1:a_r_w = {32'D0,{1{sra?sra_left_in:1'b0}},in0[31:1]};
-        6'd2:a_r_w = {32'D0,{2{sra?sra_left_in:1'b0}},in0[31:2]};
-        6'd3:a_r_w = {32'D0,{3{sra?sra_left_in:1'b0}},in0[31:3]};
-        6'd4:a_r_w = {32'D0,{4{sra?sra_left_in:1'b0}},in0[31:4]};
-        6'd5:a_r_w = {32'D0,{5{sra?sra_left_in:1'b0}},in0[31:5]};
-        6'd6:a_r_w = {32'D0,{6{sra?sra_left_in:1'b0}},in0[31:6]};
-        6'd7:a_r_w = {32'D0,{7{sra?sra_left_in:1'b0}},in0[31:7]};
-        6'd8:a_r_w = {32'D0,{8{sra?sra_left_in:1'b0}},in0[31:8]};
-        6'd9:a_r_w = {32'D0,{9{sra?sra_left_in:1'b0}},in0[31:9]};
-        6'd10:a_r_w = {32'D0,{10{sra?sra_left_in:1'b0}},in0[31:10]};
-        6'd11:a_r_w = {32'D0,{11{sra?sra_left_in:1'b0}},in0[31:11]};
-        6'd12:a_r_w = {32'D0,{12{sra?sra_left_in:1'b0}},in0[31:12]};
-        6'd13:a_r_w = {32'D0,{13{sra?sra_left_in:1'b0}},in0[31:13]};
-        6'd14:a_r_w = {32'D0,{14{sra?sra_left_in:1'b0}},in0[31:14]};
-        6'd15:a_r_w = {32'D0,{15{sra?sra_left_in:1'b0}},in0[31:15]};
-        6'd16:a_r_w = {32'D0,{16{sra?sra_left_in:1'b0}},in0[31:16]};
-        6'd17:a_r_w = {32'D0,{17{sra?sra_left_in:1'b0}},in0[31:17]};
-        6'd18:a_r_w = {32'D0,{18{sra?sra_left_in:1'b0}},in0[31:18]};
-        6'd19:a_r_w = {32'D0,{19{sra?sra_left_in:1'b0}},in0[31:19]};
-        6'd20:a_r_w = {32'D0,{20{sra?sra_left_in:1'b0}},in0[31:20]};
-        6'd21:a_r_w = {32'D0,{21{sra?sra_left_in:1'b0}},in0[31:21]};
-        6'd22:a_r_w = {32'D0,{22{sra?sra_left_in:1'b0}},in0[31:22]};
-        6'd23:a_r_w = {32'D0,{23{sra?sra_left_in:1'b0}},in0[31:23]};
-        6'd24:a_r_w = {32'D0,{24{sra?sra_left_in:1'b0}},in0[31:24]};
-        6'd25:a_r_w = {32'D0,{25{sra?sra_left_in:1'b0}},in0[31:25]};
-        6'd26:a_r_w = {32'D0,{26{sra?sra_left_in:1'b0}},in0[31:26]};
-        6'd27:a_r_w = {32'D0,{27{sra?sra_left_in:1'b0}},in0[31:27]};
-        6'd28:a_r_w = {32'D0,{28{sra?sra_left_in:1'b0}},in0[31:28]};
-        6'd29:a_r_w = {32'D0,{29{sra?sra_left_in:1'b0}},in0[31:29]};
-        6'd30:a_r_w = {32'D0,{30{sra?sra_left_in:1'b0}},in0[31:30]};
-        6'd31:a_r_w = {32'D0,{31{sra?sra_left_in:1'b0}},in0[31:31]};
-        default:a_r_w = 64'd0;
-    endcase
-end
-
-
-
-endmodule
