@@ -627,7 +627,8 @@ end
             2'b11:  fenced_fsm_next =   2'b00;
         endcase 
     end
-    wire fenced_fsm_is_chack = (fenced_fsm==2'b00);
+    wire fenced_fsm_is_chack;
+    assign fenced_fsm_is_chack = (fenced_fsm==2'b00);
 
     wire dirty;
     assign dirty = tag_tep[22];

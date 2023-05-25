@@ -246,7 +246,8 @@ module dc(
 
     assign {alu_in1_sel,alu_in2_sel} = {auipc||jal||bxx,alu_i||alu_iw||auipc||jal||jalr||bxx};
 
-    wire rd_write = alu_i||alu_iw||alu_r||alu_w||load||lui||auipc||jal||jalr||csrr;
+    wire rd_write;
+    assign rd_write = alu_i||alu_iw||alu_r||alu_w||load||lui||auipc||jal||jalr||csrr;
 
 
     reg [1:0]  rd_sel;
@@ -921,7 +922,6 @@ module lsu(
     assign sram_busw_out = {sram_w_addr,sram_w_data,sram_w_type,sram_w_strb,sram_w_req};
     assign sram_w_rdy = sram_busw_in;
 
-    wire sram_write_ready_in = sram_w_rdy;
 
 
     wire sram_load_addr_ok;
