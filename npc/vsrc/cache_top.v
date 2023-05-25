@@ -191,7 +191,7 @@ module cache_top(
 
     always@(posedge clk)begin
         if(!rst_n)begin
-            cache_in_reg <= {`MEM_BUS_ADDR_WIDTH'd0,`CACHE_DATA_WIDTH'd0,1'b0};
+            cache_in_reg <= {`MEM_BUS_ADDR_WIDTH'd0,`CACHE_DATA_WIDTH'd0,2'b0,1'b0};
         end
         else begin
             if((valid_in&&(fsm==4'h0))||((fsm==4'h1)&&(hit)&&(!write_reg)&&valid_in))begin
@@ -647,7 +647,7 @@ end
     end
 
     wire [23-1:0] tag_tep;
-    wire [128-1:0]  data_tep;
+    wire [256-1:0]  data_tep;
 
     wire [`MEM_BUS_ADDR_WIDTH-1:0]  fence_d_addr;
     wire [`MEM_BUS_DATA_WIDTH-1:0]  fence_d_data;
@@ -658,8 +658,8 @@ end
 
     assign {tag_tep,data_tep} = (fenced_fsm == 2'b01)?(fenced_cnt[7]?{tag1_data_out,data_out1_data}:{tag0_data_out,data_out0_data}):fenced_tep;
 
-    assign {fence_d_addr    ,fence_d_data   ,fence_d_strb,fence_d_type         ,fence_d_req                     } = ((fenced_fsm==2'b1)||(fenced_fsm==2'b10))?
-    {{tag_tep[20:0],fenced_cnt[6:0],4'b0},data_tep,~16'd0,4'd15,dirty&&~fenced_fsm_is_chack}:{`MEM_BUS_ADDR_WIDTH'd0,`MEM_BUS_DATA_WIDTH'd0,`MEM_BUS_STRB_WIDTH'd0,`MEM_BUS_TYPE_WIDTH'd0,1'b0};
+    assign {fence_d_addr                            ,fence_d_data   ,fence_d_strb      ,fence_d_type         ,fence_d_req                     } = ((fenced_fsm==2'b1)||(fenced_fsm==2'b10))?
+    {       {tag_tep[20:0],fenced_cnt[6:0],4'b0}    ,data_tep       ,~`MEM_BUS_STRB_WIDTH'd0            ,`MEM_BUS_TYPE_WIDTH'd15                ,dirty&&~fenced_fsm_is_chack}:{`MEM_BUS_ADDR_WIDTH'd0,`MEM_BUS_DATA_WIDTH'd0,`MEM_BUS_STRB_WIDTH'd0,`MEM_BUS_TYPE_WIDTH'd0,1'b0};
 
     assign fenced_next = ((fenced_cnt==8'hff)||(fenced_cnt_ready_to_go))?4'h0:4'h7;
 

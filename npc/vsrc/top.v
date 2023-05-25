@@ -7,7 +7,7 @@ import "DPI-C" function void status_cpy(input int addr,input int a1,input int a0
 `define AXI_LEN_WIDTH 8
 `define AXI_RESP_WIDTH 2
 
-//`define DIFF_TEST
+`define DIFF_TEST
 
 
 module top(
@@ -65,15 +65,15 @@ module top(
     );
 
 
-    wire [32+64+32+1+1-1:0]       wb_ex;
-    wire [289:0]           dc_ex;
+    wire [1+64+32+5+1+1-1:0]       wb_ex;
+    wire [287:0]           dc_ex;
     dc dc(
         .clk(clk)
         ,.rst_n(rst_n)
 
         ,.if_dc({if_dc[64:1],if_dc[0]&&(~jup)})
 
-        ,.wb_dc(sideway)
+        ,.wb_dc(sideway[69:0])
 
         ,.ready_in(dc_ready_in)
         ,.next_stage_ready(lsu_ready_in&&exu_ready_in)
@@ -93,8 +93,8 @@ module top(
         ,.jup_addr(jup_addr)
 
 
-        ,.dc_ex({dc_ex[289:1],dc_ex[0]&&(!jup)})
-        ,.sideway(sideway)
+        ,.dc_ex({dc_ex[287:1],dc_ex[0]&&(!jup)})
+        ,.sideway(sideway[69:0])
         ,.exu_ready_in(exu_ready_in)
         ,.wb(wb_ex)
 
@@ -125,7 +125,7 @@ module top(
     lsu lsu(
         .clk(clk)
         ,.rst_n(rst_n)
-        ,.dc_ls({dc_ex[289:1],dc_ex[0]&&(!jup)})
+        ,.dc_ls({dc_ex[287:1],dc_ex[0]&&(!jup)})
         ,.sideway(sideway[64+5+1-1:0])
 
         ,.lsu_ready_in(lsu_ready_in)

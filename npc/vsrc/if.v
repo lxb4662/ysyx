@@ -1,3 +1,4 @@
+`include "vsrc/define.v"
 import "DPI-C" function void mtrace(input int pc ,input int addr,input int a0,input int a1,input int len);
 module ifu(
     input                           clk,
@@ -119,7 +120,7 @@ module dc(
     input [5+64+1-1:0]      wb_dc,
     
 
-    output reg [289:0]     dc_ex,
+    output reg [287:0]     dc_ex,
     output                  ready_in,
     input                   next_stage_ready
     
@@ -325,7 +326,7 @@ endmodule
 module exu(
     input               clk,
     input               rst_n,
-    input [289:0]      dc_ex,
+    input [287:0]      dc_ex,
     input [64+5+1-1:0]        sideway,
     output              exu_ready_in,
     output reg          jup,
@@ -596,7 +597,7 @@ module exu(
         ,.data_in(csr_in)
         ,.write(csrr&&valid_i)
         ,.ecall(ecall&&valid_i)
-        ,.epc(pc)
+        ,.epc({32'b0,pc})
         ,.no(64'h11)
         ,.data_out(csr_out)
 
@@ -643,14 +644,14 @@ module exu(
     assign rd_valid = valid_i&&(~(load||store))&&(~alu_op[3])||valid_i&&(~(load||store))&&((alu_op[3:2]==2'b10)&&mul_out_valid||(alu_op[3:2]==2'b11)&&div_out_valid)||valid_i&&csrr;
     always@(posedge clk)begin
         if(!rst_n)begin
-            wb_reg <= 70'd0;
+            wb_reg <= 'd0;
         end
         else begin
             wb_reg <= {pc,rd_data,rd,rd_write,rd_valid};
         end
     end
 
-    assign wb = wb_reg;
+    assign wb = {1'b1,wb_reg};
 
 endmodule
 
@@ -659,7 +660,7 @@ module lsu(
     input clk,
     input rst_n,
 
-    input [289:0]                      dc_ls,
+    input [287:0]                      dc_ls,
     input [64+5+1-1:0]                  sideway,
     output                              lsu_ready_in,
     output [1+32+64+5+1+1-1:0]                 wb,
@@ -893,7 +894,7 @@ module lsu(
     wire            sram_re_valid;
 
     assign sram_r_addr = ls_addr_all;
-    assign sram_r_type = sram_len;
+    assign sram_r_type = {2'b00,sram_len};
     assign sram_r_req  = load&&(!addr_in_cache)&&valid_i;
 
     assign sram_busr_out = {sram_r_addr,sram_r_type,sram_r_req};
@@ -912,8 +913,8 @@ module lsu(
     wire            sram_w_rdy;
 
     assign sram_w_addr = ls_addr_all;
-    assign sram_w_data = ls_data_all;
-    assign sram_w_type = sram_len;
+    assign sram_w_data = {192'b0,ls_data_all};
+    assign sram_w_type = {2'b00,sram_len};
     assign sram_w_strb = ~16'd0;
     assign sram_w_req  = (store)&&(~addr_in_cache)&&valid_i&&((fsm==4'h0)||(fsm==4'h1));
 

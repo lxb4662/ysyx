@@ -13,7 +13,7 @@ using namespace std;
 //#define TRACE
 //#define ITRACE
 //#define PRINT
-//#define DIFF
+#define DIFF
 //#define mtrace
 #include <unistd.h>
 
