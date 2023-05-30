@@ -7,7 +7,7 @@ import "DPI-C" function void status_cpy(input int addr,input int a1,input int a0
 `define AXI_LEN_WIDTH 8
 `define AXI_RESP_WIDTH 2
 
-`define DIFF_TEST
+//`define DIFF_TEST
 
 
 module top(
@@ -109,17 +109,16 @@ module top(
     wire [31:0] sram2r_addr;
     wire        sram2r_rdy;
 
-    wire [255:0]sram2re_data;
+    wire [63:0]sram2re_data;
     wire        sram2re_valid;
 
     wire [31:0]     sram2w_addr;
-    wire [255:0]    sram2w_data;
+    wire [63:0]     sram2w_data;
     wire [5:0]      sram2w_type;
     wire            sram2w_req;
     wire [15:0]     sram2w_strb;
 
     wire            sram2w_rdy;
-
 
 
     lsu lsu(
@@ -372,7 +371,7 @@ module top(
         
         ,.r_in_2({sram2r_addr,sram2r_type,sram2r_req})
         ,.r_out_2({sram2re_data,sram2r_rdy,sram2re_valid})
-        ,.w_in_2({sram2w_addr,sram2w_data,sram2w_type,sram2w_strb,sram2w_req})
+        ,.w_in_2({sram2w_addr,192'b0,sram2w_data,sram2w_type,sram2w_strb,sram2w_req})
         ,.w_out_2(sram2w_rdy)
         
         ,.r_in_3({sramr_addr,sramr_type,sramr_req})
