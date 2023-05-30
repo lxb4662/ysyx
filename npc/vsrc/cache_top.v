@@ -674,7 +674,7 @@ module cahce_data2out (
     input [`CACHE_ADDR_WIDTH-1:0] addr,
     output reg [63:0] data_out
 );
-always@(*)begin
+/*always@(*)begin
     case (addr[4:0])
         5'b00000 : data_out = cache_data_in[63:0];
         5'b00001 : data_out = cache_data_in[71:8];
@@ -710,7 +710,11 @@ always@(*)begin
         5'b11111 : data_out = {56'b0,cache_data_in[255:248]};
         default: data_out = 'b0;
     endcase
-end
+end*/
+
+    always@(*)begin
+        data_out = cache_data_in>>(8*addr[4:0]);
+    end
 
 
 endmodule
@@ -745,7 +749,7 @@ module refill_data (
     output reg [`MEM_BUS_DATA_WIDTH-1:0]   write_shift,
     output reg [`MEM_BUS_DATA_WIDTH-1:0]   cache_write_bwen
 );
-
+/*
 always@(*)begin
     case (addr[4:0])
         5'b00000 : write_shift = {192'b0,data_in[63:0]} ;
@@ -782,8 +786,10 @@ always@(*)begin
         5'b11111 : write_shift = {data_in[7:0],248'b0 };
         default : write_shift = 'b0;
     endcase 
-    
-end
+end*/
+    always@(*)begin
+        write_shift = data_in<<(addr[4:0]*8);
+    end
 
 
 reg [255:0] mask;
@@ -796,7 +802,7 @@ always@(*)begin
         2'b11:  mask = 256'hffffffffffffffff;
     endcase
 end
-
+/*
 always@(*)begin
     case (addr[4:0])
         5'b0000 : cache_write_bwen = mask ;
@@ -832,6 +838,11 @@ always@(*)begin
         5'b11110 : cache_write_bwen = mask << 240;
         5'b11111 : cache_write_bwen = mask << 248;
     endcase 
+end*/
+
+always@(*)begin
+    cache_write_bwen =  mask<<(addr[4:0]*8);
+
 end
 
 assign out = (cache_write_bwen&write_shift)|((~cache_write_bwen)&mem_data);
@@ -1011,3 +1022,4 @@ always @(posedge CLK) begin
 end
 
 endmodule
+

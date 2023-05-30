@@ -300,7 +300,7 @@ module dc(
 
     always@(posedge clk)begin
         if(!rst_n)begin
-            dc_ex <= 'd0;
+            dc_ex <= 288'd0;
         end
         else begin
             if(next_stage_ready)begin
@@ -433,8 +433,8 @@ module exu(
     assign alu_in2_1 = alu_in2_sel ?imm:rs2_sw;
     wire [63:0] alu_in1;
     wire [63:0] alu_in2;
-    assign alu_in1 = (alu_w||alu_iw)?alu_in1_1:alu_in1_1;
-    assign alu_in2 = (alu_w||alu_iw)?alu_in2_1:alu_in2_1;
+    assign alu_in1 = (alu_w||alu_iw)?{32'b0,alu_in1_1[31:0]}:alu_in1_1;
+    assign alu_in2 = (alu_w||alu_iw)?{32'b0,alu_in2_1[31:0]}:alu_in2_1;
 
     assign exu_ready_in = (fsm==4'b0)&&(alu_op[3]!=1'b1)||(fsm==4'b1)&&mul_out_valid||(!valid_i)||(fsm==4'h2)&&div_out_valid;
 
@@ -463,14 +463,27 @@ module exu(
 
     wire [63:0] shift_arw;
     wire [63:0] shift_srl;
+
+    `define SHIFT
+    `ifdef SHIFT
     ysyx_050518_shift ysyx_050518_shift(
-    .in0((alu_w||alu_iw)?{32'b0,alu_in1[31:0]}:alu_in1)
+    .in0(alu_in1)
     ,.in1((alu_w||alu_iw)?{59'd0,alu_in2[4:0]}:alu_in2)
-    ,.sra(sra),.sra_left_in((alu_w||alu_iw)?alu_in1[31]:alu_in1[63]),.logic_r(shift_srl)
+    ,.sra(sra)
+    ,.sra_left_in((alu_w||alu_iw)?alu_in1[31]:alu_in1[63])
+    ,.logic_r(shift_srl)
     ,.logic_l(alu_sll)
     ,.a_r_w(shift_arw));
 
     assign alu_srl = (alu_w||alu_iw)?shift_arw:shift_srl;
+    `endif
+    //`ifndef SHIFT
+    //assign alu_srl = (alu_w||alu_iw)?shift_arw:shift_srl;
+    //assign shift_arw = sra?(alu_in1[31:0] >>> alu_in2[4:0]):(alu_in1[31:0] >> alu_in2);
+    //assign shift_srl = sra?(alu_in1 >>> alu_in2[5:0]):(alu_in1 >> alu_in2);
+    //assign alu_sll = alu_in1 << alu_in2;
+    //`endif
+
 
 
     wire [63:0] slt;
@@ -675,10 +688,10 @@ module lsu(
 
     output [1 + 6 + 32 - 1 : 0]             sram_busr_out,
     //  r_addr r_type r_req
-    input [1 + 1 + 256 - 1 :0]              sram_busr_in,
+    input [1 + 1 + 64 - 1 :0]              sram_busr_in,
     // r_rdy re_data re_valid 
 
-    output [32 + 256 + 6 + 16 + 1 - 1 : 0]  sram_busw_out,
+    output [32 + 64 + 6 + 16 + 1 - 1 : 0]  sram_busw_out,
     //  {sram_w_addr,sram_w_data,sram_w_type,sram_w_strb,sram_w_req};
     input                                   sram_busw_in   
 
@@ -891,7 +904,7 @@ module lsu(
     wire            sram_r_req;
 
     wire            sram_r_rdy;
-    wire [255:0]    sram_re_data;
+    wire [63:0]     sram_re_data;
     wire            sram_re_valid;
 
     assign sram_r_addr = ls_addr_all;
@@ -906,7 +919,7 @@ module lsu(
     
 
     wire [31:0]     sram_w_addr;
-    wire [255:0]    sram_w_data;
+    wire [63:0]     sram_w_data;
     wire [5:0]      sram_w_type;
     wire [15:0]     sram_w_strb;
     wire            sram_w_req;
@@ -914,7 +927,7 @@ module lsu(
     wire            sram_w_rdy;
 
     assign sram_w_addr = ls_addr_all;
-    assign sram_w_data = {192'b0,ls_data_all};
+    assign sram_w_data = ls_data_all;
     assign sram_w_type = {2'b00,sram_len};
     assign sram_w_strb = ~16'd0;
     assign sram_w_req  = (store)&&(~addr_in_cache)&&valid_i&&((fsm==4'h0)||(fsm==4'h1));
@@ -1893,4 +1906,5 @@ module csr_addr_conveter(
         end*/
     end
 endmodule
+
 
