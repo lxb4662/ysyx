@@ -7,7 +7,7 @@ import "DPI-C" function void status_cpy(input int addr,input int a1,input int a0
 `define AXI_LEN_WIDTH 8
 `define AXI_RESP_WIDTH 2
 
-//`define DIFF_TEST
+`define DIFF_TEST
 
 
 module top(

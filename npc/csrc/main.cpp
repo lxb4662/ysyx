@@ -309,10 +309,12 @@ int main(int argc, char** argv, char** env) {
 
   long int clk_cnt = 1;
   int begin_time = get_second();
+  int return_value = 0;
   while(!Verilated::gotFinish()){
     clk_cnt ++;
     if(!run_one_clk_soc_with_test(top,tfp,contextp)){
       printf("error: pc %8lx\n",npc.pc);
+      return_value = -1;
       break;
     };
     #ifdef TRACE
@@ -326,14 +328,15 @@ int main(int argc, char** argv, char** env) {
     }
   }
 
-  sdb_mainloop();
+  ///sdb_mainloop();
 
 
   for (int i =0;i<=500;i++){
     run_one_clk_soc(top,tfp,contextp);
   }
 
-
+  return return_value;
   
 
 }
+
