@@ -14,7 +14,7 @@ uint32_t NDL_GetTicks() {
   struct timeval tv;      //timeval yong lai fan hui miao he wei miao ,di er ge can shu bu yong guan 
   gettimeofday(&tv, NULL);
   //printf("NDL_get ticks down\n");
-  return tv.tv_usec / 1000;
+  return tv.tv_usec / 100000;
 }
 
 int NDL_PollEvent(char *buf, int len) {
