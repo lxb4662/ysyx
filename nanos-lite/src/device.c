@@ -43,7 +43,7 @@ size_t dispinfo_read(void *buf, size_t offset, size_t len) {
   return len;
 }
 // xie yi hang
-size_t fb_write(const void *buf, size_t offset, size_t len) {
+size_t fb_write(const void *buf, size_t offset, int* len) {
   // du ping mu shu jv
   AM_GPU_CONFIG_T _config = io_read(AM_GPU_CONFIG);
   // qi dain
@@ -51,9 +51,9 @@ size_t fb_write(const void *buf, size_t offset, size_t len) {
   int y = (offset) / _config.width;
 
   //xie yi hang io_write(AM_GPU_FBDRAW, x, y, (void*)buf, len, 1, true);
-  io_write(AM_GPU_FBDRAW, x, y, (void*)buf, len, 1, true);
+  io_write(AM_GPU_FBDRAW, x, y, (void*)buf, len[0], len[1], true);
 
-  return len;
+  return len[0]*len[1];
 }
  long long gettimeofday(){
   return io_read(AM_TIMER_UPTIME).us;

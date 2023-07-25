@@ -14,7 +14,7 @@ uint32_t NDL_GetTicks() {
   struct timeval tv;      //timeval yong lai fan hui miao he wei miao ,di er ge can shu bu yong guan 
   gettimeofday(&tv, NULL);
   //printf("NDL_get ticks down\n");
-  return tv.tv_usec / 100000;
+  return tv.tv_usec / 1000;
 }
 
 int NDL_PollEvent(char *buf, int len) {
@@ -61,10 +61,13 @@ void NDL_OpenCanvas(int *w, int *h) {
 void NDL_DrawRect(uint32_t *pixels, int x, int y, int w, int h) {
   //wei shen me bu yong fopen fseek fwrite ? yin wei GPU de di zhi ying she you dian qi guai 
   int fd = open("/dev/fb",0,0);
-  for(int i = 0; i < h; i++){
-    lseek(fd, ((y+i)*screen_w+x), SEEK_SET);
-    write(fd, pixels + i * w, w);
-  }
+  //for(int i = 0; i < h; i++){
+  int a[2];
+  a[0] = w;
+  a[1] = h;
+  lseek(fd, (y*screen_w+x), SEEK_SET);
+  write(fd, pixels, a);
+  //}
   close(fd);
 }
 /*
