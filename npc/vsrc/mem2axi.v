@@ -22,7 +22,7 @@
 //  defination of rtype
 //  the number of read bytes
 
-
+/*
 `define MEM_BUS_DATA_WIDTH 256
 `define MEM_BUS_ADDR_WIDTH 32
 `define MEM_BUS_TYPE_WIDTH 6
@@ -34,8 +34,8 @@
 `define AXI_SIZE_WIDTH 3        // 32 bit only normally is the 3 bits
 `define AXI_ID_WIDTH 4
 `define AXI_LEN_WIDTH 4
-`define AXI_RESP_WIDTH 2
-
+`define AXI_RESP_WIDTH 2*/
+`include "vsrc/define.v"
 module mem2axi(
     clk,
     rst_n,
@@ -83,7 +83,9 @@ module mem2axi(
     w_strb,
     w_last,
     w_valid,
-    w_ready
+    w_ready,
+
+    b_ready
 
 
     );
@@ -138,6 +140,7 @@ module mem2axi(
     output                       w_valid;
     input                        w_ready;
 
+    output                       b_ready;
     reg [5:0] read_fsm;
     reg [5:0] read_fsm_next;
 
@@ -508,7 +511,7 @@ module mem2axi(
         assign support_brust = 1'b0; //(r_addr_wire[`MEM_BUS_ADDR_WIDTH-1:MEM_BUS_TYPE_WIDTH-4] == 4'ha);
     `endif
 
-
+    assign b_ready = 1'b1;
 
 endmodule
 

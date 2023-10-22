@@ -42,3 +42,12 @@
 `define TAG_OFFS_WIDTH 5
 `define TAG_INDX_WIDTH 6
 `define TAG_TAGE_WIDTH 21
+
+
+`define AXI_DATA_WIDTH 64
+`define AXI_ADDR_WIDTH 32
+`define AXI_BRUS_WIDTH 2
+`define AXI_SIZE_WIDTH 3        // 32 bit only normally is the 3 bits
+`define AXI_ID_WIDTH 4
+`define AXI_LEN_WIDTH 4
+`define AXI_RESP_WIDTH 2

@@ -61,7 +61,7 @@ module ram_tb(
     end
 
 endmodule
-
+/*
 `define TAG_DATA_WIDTH  23
 module tag_ram_128(
     clk,
@@ -251,4 +251,4 @@ always @(posedge CLK) begin
     Q <= cen && !wen ? ram[A] : {4{$random}};
 end
 
-endmodule
+endmodule*/

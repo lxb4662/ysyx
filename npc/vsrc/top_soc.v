@@ -38,21 +38,21 @@ top top(
     .clk(clock)
     ,.rst_n(~reset)
 
-	,.ar_addr(io_master_araddr)
-    ,.ar_valid(io_master_arvalid)
-    ,.ar_ready(io_master_arready)
+	,.io_master_araddr(io_master_araddr)
+    ,.io_master_arvalid(io_master_arvalid)
+    ,.io_master_arready(io_master_arready)
 
-    ,.r_valid(io_master_rvalid)
-    ,.r_ready(io_master_rready)
-    ,.r_data(io_master_rdata)
+    ,.io_master_rvalid(io_master_rvalid)
+    ,.io_master_rready(io_master_rready)
+    ,.io_master_rdata(io_master_rdata)
 
-    ,.aw_addr(io_master_awaddr)
-    ,.aw_ready(io_master_awready)
-    ,.aw_valid(io_master_awvalid)
+    ,.io_master_awaddr(io_master_awaddr)
+    ,.io_master_awready(io_master_awready)
+    ,.io_master_awvalid(io_master_awvalid)
 
-    ,.w_data(io_master_wdata)
-    ,.w_valid(io_master_wvalid)
-    ,.w_ready(io_master_wready)
+    ,.io_master_wdata(io_master_wdata)
+    ,.io_master_wvalid(io_master_wvalid)
+    ,.io_master_wready(io_master_wready)
 
 
 	/*

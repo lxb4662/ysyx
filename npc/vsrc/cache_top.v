@@ -19,7 +19,8 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
-
+`include "vsrc/define.v"
+/*
 `define MEM_BUS_DATA_WIDTH 256
 `define MEM_BUS_ADDR_WIDTH 32
 `define MEM_BUS_TYPE_WIDTH 6
@@ -41,7 +42,7 @@
 `define TAG_OFFS_WIDTH 5
 `define TAG_INDX_WIDTH 6
 `define TAG_TAGE_WIDTH 21
-
+*/
 module cache_top(
     clk,
     rst_n,

@@ -3,6 +3,7 @@ import "DPI-C" function void status_cpy(input int addr,input int a1,input int a0
 `define AXI_ADDR_WIDTH 32
 `define AXI_BRUS_WIDTH 2
 `define AXI_SIZE_WIDTH 3
+`define AXI_STRB_WIDTH 4
 `define AXI_ID_WIDTH 4
 `define AXI_LEN_WIDTH 8
 `define AXI_RESP_WIDTH 2
@@ -14,21 +15,41 @@ module top(
     input clk,
     input rst_n,
 
-    output [`AXI_ADDR_WIDTH-1:0]    ar_addr,
-    output                          ar_valid,
-    input                           ar_ready,
+    input                           io_master_arready,
+    output                          io_master_arvalid,
+    output [`AXI_ID_WIDTH-1:0]      io_master_arid,
+    output [`AXI_ADDR_WIDTH-1:0]    io_master_araddr,
+    output [`AXI_LEN_WIDTH-1:0]     io_master_arlen,
+    output [`AXI_SIZE_WIDTH-1:0]    io_master_arsize,
+    output [`AXI_BRUS_WIDTH-1:0]    io_master_arburst,
 
-    input                           r_valid,
-    output                          r_ready,
-    input  [`AXI_DATA_WIDTH-1:0]    r_data,
 
-    output [`AXI_ADDR_WIDTH-1:0]    aw_addr,
-    input                           aw_ready,
-    output                          aw_valid,
+    output                          io_master_rready,
+    input                           io_master_rvalid,
+    input  [`AXI_ID_WIDTH-1:0]      io_master_rid,
+    input  [`AXI_RESP_WIDTH-1:0]    io_master_rresp,
+    input  [`AXI_DATA_WIDTH-1:0]    io_master_rdata,
+    input                           io_master_rlast,
 
-    output [`AXI_DATA_WIDTH-1:0]    w_data,
-    output                          w_valid,
-    input                           w_ready
+    output [`AXI_ID_WIDTH-1:0]      io_master_awid,
+    output [`AXI_ADDR_WIDTH-1:0]    io_master_awaddr,
+    output [`AXI_LEN_WIDTH-1:0]     io_master_awlen,
+    output [`AXI_SIZE_WIDTH-1:0]    io_master_awsize,
+    output [`AXI_BRUS_WIDTH-1:0]    io_master_awburst,
+    input                           io_master_awready,
+    output                          io_master_awvalid,
+
+    output [`AXI_DATA_WIDTH-1:0]    io_master_wdata,
+    output [`AXI_STRB_WIDTH-1:0]    io_master_wstrb,
+    output                          io_master_wlast,
+    output                          io_master_wvalid,
+    input                           io_master_wready,
+
+    
+    input                           io_master_bvalid,
+    input  [`AXI_ID_WIDTH-1:0]      io_master_bid,
+    input  [`AXI_RESP_WIDTH-1:0]    io_master_bresp,
+    output                          io_master_bready,
 
 
 
@@ -306,35 +327,36 @@ module top(
         ,.iw_rdy(sramw_rdy)
 
 
-        ,.ar_addr(ar_addr)
-        ,.ar_valid(ar_valid)
-        ,.ar_id(ar_id)
-        ,.ar_len(ar_len)
-        ,.ar_size(ar_size)
-        ,.ar_brust(ar_brust)
-        ,.ar_ready(ar_ready)
+        ,.ar_addr       (io_master_araddr)
+        ,.ar_valid      (io_master_arvalid)
+        ,.ar_id         (io_master_arid)
+        ,.ar_len        (io_master_arlen)
+        ,.ar_size       (io_master_arsize)
+        ,.ar_brust      (io_master_arburst)
+        ,.ar_ready      (io_master_arready)
 
-        ,.r_id(r_id)
-        ,.r_data(r_data)
-        ,.r_resp(r_resp)
-        ,.r_last(r_last)
-        ,.r_valid(r_valid)
-        ,.r_ready(r_ready)
+        ,.r_id          (io_master_rid)
+        ,.r_data        (io_master_rdata)
+        ,.r_resp        (io_master_rresp)
+        ,.r_last        (io_master_rlast)
+        ,.r_valid       (io_master_rvalid)
+        ,.r_ready       (io_master_rready)
 
-        ,.aw_id()
-        ,.aw_addr(aw_addr)
-        ,.aw_len()
-        ,.aw_size()
-        ,.aw_brust()
-        ,.aw_valid(aw_valid)
-        ,.aw_ready(aw_ready)
+        ,.aw_id         (io_master_awid)
+        ,.aw_addr       (io_master_awaddr)
+        ,.aw_len        (io_master_awlen)
+        ,.aw_size       (io_master_awsize)
+        ,.aw_brust      (io_master_awburst)
+        ,.aw_valid      (io_master_awvalid)
+        ,.aw_ready      (io_master_awready)
 
-        ,.w_data(w_data)
-        ,.w_id()
-        ,.w_strb()
-        ,.w_last()
-        ,.w_valid(w_valid)
-        ,.w_ready(w_ready)
+        ,.w_data        (io_master_wdata)
+        ,.w_strb        (io_master_wstrb)
+        ,.w_last        (io_master_wlast)
+        ,.w_valid       (io_master_wvalid)
+        ,.w_ready       (io_master_wready)
+
+        ,.b_ready       (io_master_bready)
 
     );
 
