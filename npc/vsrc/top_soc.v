@@ -35,8 +35,8 @@ module top_soc(
 
 
 top top(
-    .clk(clock)
-    ,.rst_n(~reset)
+    .clock(clock)
+    ,.reset(~reset)
 
 	,.io_master_araddr(io_master_araddr)
     ,.io_master_arvalid(io_master_arvalid)

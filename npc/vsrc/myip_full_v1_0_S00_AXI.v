@@ -1,6 +1,9 @@
-import "DPI-C" function longint mem_read (input longint a,input int len);
-//import "DPI-C" function longint mem_read_inst (input longint a,input int len);
-import "DPI-C" function int mem_write (input longint a,input int len,input longint data);
+`ifndef SOC
+	import "DPI-C" function longint mem_read (input longint a,input int len);
+	//import "DPI-C" function longint mem_read_inst (input longint a,input int len);
+	import "DPI-C" function int mem_write (input longint a,input int len,input longint data);
+`endif
+
 	module myip_v1_0_S00_AXI #
 	(
 		// Users to add parameters here

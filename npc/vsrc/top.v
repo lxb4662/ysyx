@@ -1,19 +1,14 @@
-import "DPI-C" function void status_cpy(input int addr,input int a1,input int a0,input int write,input int pc,input int incache,input int valid);
-`define AXI_DATA_WIDTH 64
-`define AXI_ADDR_WIDTH 32
-`define AXI_BRUS_WIDTH 2
-`define AXI_SIZE_WIDTH 3
-`define AXI_STRB_WIDTH 4
-`define AXI_ID_WIDTH 4
-`define AXI_LEN_WIDTH 8
-`define AXI_RESP_WIDTH 2
-
-`define DIFF_TEST
 
 
+
+
+`ifndef SOC
+    `include "vsrc/define.v"
+    import "DPI-C" function void status_cpy(input int addr,input int a1,input int a0,input int write,input int pc,input int incache,input int valid);
+`endif
 module top(
-    input clk,
-    input rst_n,
+    input clock,
+    input reset,
 
     input                           io_master_arready,
     output                          io_master_arvalid,
@@ -52,12 +47,92 @@ module top(
     output                          io_master_bready,
 
 
+    output 	io_slave_awready,		
+	input 	io_slave_awvalid,
+	input[3:0] 	io_slave_awid,	
+	input[31:0] 	io_slave_awaddr,	
+	input[7:0] 	io_slave_awlen,	
+	input[2:0] 	io_slave_awsize,	
+	input[1:0] 	io_slave_awburst,	
+	output 	io_slave_wready,	
+	input 	io_slave_wvalid,	
+	input[63:0] 	io_slave_wdata,	
+	input[7:0] 	io_slave_wstrb,	
+	input 	io_slave_wlast,	
+	input 	io_slave_bready,	
+	output 	io_slave_bvalid,	
+	output[3:0] 	io_slave_bid,	
+	output[1:0] 	io_slave_bresp,	
+	output 	io_slave_arready,	
+	input 	io_slave_arvalid,	
+	input[3:0] 	io_slave_arid,	
+	input[31:0] 	io_slave_araddr,	
+	input[7:0] 	io_slave_arlen,	
+	input[2:0] 	io_slave_arsize,	
+	input[1:0] 	io_slave_arburst,	
+	input 	io_slave_rready,	
+	output 	io_slave_rvalid,	
+	output[3:0] 	io_slave_rid,	
+	output[1:0] 	io_slave_rresp,	
+	output[63:0] 	io_slave_rdata,	
+	output 	io_slave_rlast,
 
+    output[5:0]  	io_sram0_addr,	
+	output       	io_sram0_cen,	
+	output       	io_sram0_wen,	
+	output[127:0] 	io_sram0_wmask,	
+	output[127:0] 	io_sram0_wdata,	
+	input[127:0] 	io_sram0_rdata,	
+	output[5:0]  	io_sram1_addr,	
+	output       	io_sram1_cen,	
+	output       	io_sram1_wen,	
+	output[127:0] 	io_sram1_wmask,	
+	output[127:0] 	io_sram1_wdata,	
+	input[127:0] 	io_sram1_rdata,	
+	output[5:0]  	io_sram2_addr,	
+	output       	io_sram2_cen,	
+	output       	io_sram2_wen,	
+	output[127:0] 	io_sram2_wmask,	
+	output[127:0] 	io_sram2_wdata,	
+	input[127:0] 	io_sram2_rdata,	
+	output[5:0]  	io_sram3_addr,	
+	output       	io_sram3_cen,	
+	output       	io_sram3_wen,	
+	output[127:0] 	io_sram3_wmask,	
+	output[127:0] 	io_sram3_wdata,	
+	input[127:0] 	io_sram3_rdata,	
+	output[5:0]  	io_sram4_addr,	
+	output       	io_sram4_cen,	
+	output       	io_sram4_wen,	
+	output[127:0] 	io_sram4_wmask,	
+	output[127:0] 	io_sram4_wdata,	
+	input[127:0] 	io_sram4_rdata,	
+	output[5:0]  	io_sram5_addr,	
+	output       	io_sram5_cen,	
+	output       	io_sram5_wen,	
+	output[127:0] 	io_sram5_wmask,	
+	output[127:0] 	io_sram5_wdata,	
+	input[127:0] 	io_sram5_rdata,	
+	output[5:0]  	io_sram6_addr,	
+	output       	io_sram6_cen,	
+	output       	io_sram6_wen,	
+	output[127:0] 	io_sram6_wmask,	
+	output[127:0] 	io_sram6_wdata,	
+	input[127:0] 	io_sram6_rdata,	
+	output[5:0]  	io_sram7_addr,	
+	output       	io_sram7_cen,	
+	output       	io_sram7_wen,	
+	output[127:0] 	io_sram7_wmask,	
+	output[127:0] 	io_sram7_wdata,	
+	input[127:0] 	io_sram7_rdata
     
 
 );
 
-
+    wire clk;
+    wire rst_n;
+    assign rst_n = reset;
+    assign clk = clock;
 
     wire [32+2+1-1:0]       r;
     wire [32+1-1:0]         re;
@@ -87,19 +162,26 @@ module top(
 
 
     wire [1+64+32+5+1+1-1:0]       wb_ex;
-    wire [287:0]           dc_ex;
+    wire [289:0]           dc_ex;
     dc dc(
-        .clk(clk)
-        ,.rst_n(rst_n)
+        .clk                            (clk)
+        ,.rst_n                         (rst_n)
 
-        ,.if_dc({if_dc[64:1],if_dc[0]&&(~jup)})
+        ,.if_dc                         ({if_dc[64:1],if_dc[0]&&(~jup)})
 
-        ,.wb_dc(sideway[69:0])
+        ,.wb_dc                         (sideway[69:0])
 
-        ,.ready_in(dc_ready_in)
-        ,.next_stage_ready(lsu_ready_in&&exu_ready_in)
-        ,.dc_ex(dc_ex)
+        ,.ready_in                      (dc_ready_in)
+        ,.next_stage_ready              (lsu_ready_in&&exu_ready_in)
+        ,.dc_ex                         (dc_ex)
+        ,.o_fence                       ({fence_d,fence_i})
+        ,.fence_i_ok                    ()
+        ,.fence_d_ok                    ()
     );
+
+    wire fence_d;
+    wire fence_i;
+
 
     wire exu_ready_in;
     wire jup;
@@ -114,7 +196,7 @@ module top(
         ,.jup_addr(jup_addr)
 
 
-        ,.dc_ex({dc_ex[287:1],dc_ex[0]&&(!jup)})
+        ,.dc_ex({dc_ex[289:1],dc_ex[0]&&(!jup)})
         ,.sideway(sideway[69:0])
         ,.exu_ready_in(exu_ready_in)
         ,.wb(wb_ex)
@@ -145,7 +227,7 @@ module top(
     lsu lsu(
         .clk(clk)
         ,.rst_n(rst_n)
-        ,.dc_ls({dc_ex[287:1],dc_ex[0]&&(!jup)})
+        ,.dc_ls({dc_ex[289:1],dc_ex[0]&&(!jup)})
         ,.sideway(sideway[64+5+1-1:0])
 
         ,.lsu_ready_in(lsu_ready_in)
@@ -190,7 +272,6 @@ module top(
     wire        icache_addr_ok;
     wire        icache_data_ok;
     wire [63:0] icache_data_out;
-    wire        fence_i;
 
     assign {icache_addr,icache_len,icache_valid_in} = r;
     assign re = {icache_data_out[31:0],icache_data_ok};
@@ -214,8 +295,11 @@ module top(
         ,.data_ok(icache_data_ok)
         ,.data_out(icache_data_out)
 
-        ,.fence_i(1'b0)
+        ,.fence_i(fence_i)
         ,.fence_d(1'b0)
+
+        ,.fence_ok(femce_i_ok)
+
         ,.read_abort(jup)
 
         ,.r_req(sram0r_req)
@@ -279,6 +363,8 @@ module top(
         ,.fence_i(1'b0)
         ,.fence_d(fence_d)
 
+        ,.fence_ok(femce_d_ok)
+
         ,.r_req(sram1r_req)
         ,.r_type(sram1r_type)
         ,.r_addr(sram1r_addr)
@@ -311,13 +397,13 @@ module top(
         .clk(clk)
         ,.rst_n(rst_n)
 
-        ,.r_req(sramr_req)
-        ,.r_type(sramr_type)
-        ,.r_addr(sramr_addr)
-        ,.r_rdy(sramr_rdy)
+        ,.m_r_req(sramr_req)
+        ,.m_r_type(sramr_type)
+        ,.m_r_addr(sramr_addr)
+        ,.m_r_rdy(sramr_rdy)
 
-        ,.re_data(sramre_data)
-        ,.re_valid(sramre_valid)
+        ,.m_re_data(sramre_data)
+        ,.m_re_valid(sramre_valid)
 
         ,.iw_req(sramw_req)
         ,.iw_type(sramw_type)

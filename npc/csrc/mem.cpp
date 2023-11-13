@@ -102,7 +102,7 @@ int mem_write(long long a, int len, long long data){
   if((addr==0xa0000104)){
       vgtctl[1] = data;
       if(data==1){
-        update_screen();
+        vga_update_screen();
       }
   }
   return 1;

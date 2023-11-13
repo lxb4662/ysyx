@@ -318,7 +318,7 @@ int main(int argc, char** argv, char** env) {
       break;
     };
     #ifdef TRACE
-    if(contextp->time()%800000==0){
+    if(contextp->time()%8000000==0){
       tfp->close();
       tfp->open("wave.vcd"); //设置输出的文件wave.vcd
     }

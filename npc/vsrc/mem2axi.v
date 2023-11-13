@@ -22,30 +22,20 @@
 //  defination of rtype
 //  the number of read bytes
 
-/*
-`define MEM_BUS_DATA_WIDTH 256
-`define MEM_BUS_ADDR_WIDTH 32
-`define MEM_BUS_TYPE_WIDTH 6
-`define MEM_BUS_STRB_WIDTH 16
 
-`define AXI_DATA_WIDTH 64
-`define AXI_ADDR_WIDTH 32
-`define AXI_BRUS_WIDTH 2
-`define AXI_SIZE_WIDTH 3        // 32 bit only normally is the 3 bits
-`define AXI_ID_WIDTH 4
-`define AXI_LEN_WIDTH 4
-`define AXI_RESP_WIDTH 2*/
-`include "vsrc/define.v"
+`ifndef SOC
+    `include "vsrc/define.v"
+`endif
 module mem2axi(
     clk,
     rst_n,
     
-    r_req,
-    r_type,
-    r_addr,
-    r_rdy,
-    re_data,
-    re_valid,
+    m_r_req,
+    m_r_type,
+    m_r_addr,
+    m_r_rdy,
+    m_re_data,
+    m_re_valid,
 
     iw_req,
     iw_type,
@@ -93,13 +83,13 @@ module mem2axi(
     input clk;
     input rst_n;
 
-    input r_req;
-    input [`MEM_BUS_TYPE_WIDTH-1:0] r_type;
-    input [`MEM_BUS_ADDR_WIDTH-1:0] r_addr;
-    output r_rdy;
+    input m_r_req;
+    input [`MEM_BUS_TYPE_WIDTH-1:0] m_r_type;
+    input [`MEM_BUS_ADDR_WIDTH-1:0] m_r_addr;
+    output m_r_rdy;
 
-    output[`MEM_BUS_DATA_WIDTH-1:0] re_data;
-    output re_valid;
+    output[`MEM_BUS_DATA_WIDTH-1:0] m_re_data;
+    output m_re_valid;
 
     input iw_req;
     input [`MEM_BUS_TYPE_WIDTH-1:0] iw_type;
@@ -167,7 +157,7 @@ module mem2axi(
 
     always@(*)begin
         case(read_fsm)
-            6'h0: read_fsm_next = r_req?6'h1:6'h0;
+            6'h0: read_fsm_next = m_r_req?6'h1:6'h0;
             6'h1: read_fsm_next = ar_ready?(ar_unfinished?6'h1:6'h2):6'h1;
             6'h2: read_fsm_next = r_finished?6'h0:6'h2;
             default: read_fsm_next = 6'h0;
@@ -291,13 +281,13 @@ module mem2axi(
             read_reg <= {`MEM_BUS_ADDR_WIDTH'd0,`MEM_BUS_TYPE_WIDTH'd0};
         end
         else begin
-            if(r_rdy && r_req)begin
-                read_reg <= {r_type,r_addr};
+            if(m_r_rdy && m_r_req)begin
+                read_reg <= {m_r_type,m_r_addr};
             end
         end
     end
 
-    assign r_rdy = (read_fsm == 6'd0);
+    assign m_r_rdy = (read_fsm == 6'd0);
 
 
     wire [`MEM_BUS_TYPE_WIDTH-1:0] r_type_wire;
@@ -342,13 +332,14 @@ module mem2axi(
     data_read dr1(
         .clk(clk)
         ,.rst_n(rst_n)
+        ,.last_addr(r_addr_wire[2:0])
         ,.d_type(4'b0)
         ,.cnt(r_cnt)
         ,.data_in0(r_data)
-        ,.data_out(re_data)
+        ,.data_out(m_re_data)
     );
 
-    assign re_valid = r_valid&r_finished;
+    assign m_re_valid = r_valid&r_finished;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -430,9 +421,9 @@ module mem2axi(
             6'h1:   aw_cnt_i = 8'd0;
             6'h2:   aw_cnt_i = 8'd0;
             6'h3:   aw_cnt_i = 8'd0;
-            6'h7:   aw_cnt_i = 8'd1;
-            6'hf:   aw_cnt_i = 8'd3;
-            6'h1f:   aw_cnt_i = 8'd7;
+            6'h7:   aw_cnt_i = w_support_64bits?8'd0:8'd1;
+            6'hf:   aw_cnt_i = w_support_64bits?8'd1:8'd3;
+            6'h1f:   aw_cnt_i = w_support_64bits?8'd3:8'd7;
             default: aw_cnt_i = 8'd0;
         endcase
     end
@@ -475,20 +466,34 @@ module mem2axi(
         end
     end
 
-    assign w_valid = (w_fsm==2'b01)||(w_fsm==2'b10);
+    assign w_valid = (w_fsm==2'b01)||(w_fsm==2'b10);;
     assign w_strb = ~64'd0;
+    assign w_last = 'b1;
     data_write dw1(
         .d_type(4'd0)
+        ,.last_addr(iw_addr_wire[2:0])
         ,.data_in(iw_data_wire)
         ,.cnt(w_cnt)
         ,.data_out(w_data)
     );
 
+    reg [`AXI_SIZE_WIDTH-1:0]   size_wire;
+    always@(*)begin
+        case(iw_type_wire)
+            6'd0: size_wire = `AXI_SIZE_WIDTH'b00;
+            6'd1: size_wire = `AXI_SIZE_WIDTH'b01;
+            6'd3: size_wire = `AXI_SIZE_WIDTH'b10;
+            6'd7: size_wire = w_support_64bits?`AXI_SIZE_WIDTH'b11:`AXI_SIZE_WIDTH'b10;
+            default:  size_wire = w_support_64bits?`AXI_SIZE_WIDTH'b11:`AXI_SIZE_WIDTH'b10;
+        endcase
+    end
+
+
     assign aw_valid = (aw_fsm==2'h1)||(aw_fsm==2'b10);
-    assign aw_addr = iw_addr_wire + aw_cnt * 32'd4;
+    assign aw_addr = iw_addr_wire + aw_cnt * (w_support_64bits?32'd8:32'd4);
     assign aw_id   = `AXI_ID_WIDTH'b0;
     assign aw_len  = `AXI_LEN_WIDTH'd0;
-    assign aw_size = `AXI_SIZE_WIDTH'b11;
+    assign aw_size = size_wire;
     assign aw_brust= `AXI_BRUS_WIDTH'b01;
 
 
@@ -499,10 +504,19 @@ module mem2axi(
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
     wire support_64bits;
     assign support_64bits = 1'b0;
 
+
+    wire w_support_64bits;
+
+    `ifdef SOC_SDRAM_64
+		assign w_support_64bits = iw_addr_wire[31:28]==4'h8;
+    `else
+    	assign w_support_64bits = 1'b0;
+    `endif
+    
+    
     wire support_brust;
     // support burts means : support brust and 64 data width
     `ifdef SOC_SDRAM_BRUST
@@ -520,6 +534,7 @@ module data_read(
     input           clk,
     input           rst_n,
     input [3:0]     d_type,
+    input [2:0]	    last_addr,
     input [7:0]     cnt,
     input [`AXI_DATA_WIDTH-1:0]    data_in0,
     output reg [`MEM_BUS_DATA_WIDTH-1:0]   data_out
@@ -570,19 +585,35 @@ module data_read(
         endcase
     end
 
+    reg [`MEM_BUS_DATA_WIDTH-1:0] data3;
     always@(*)begin
         case(d_type)
-            4'd0: data_out = data0;
-            4'd1: data_out = data1;
-            default : data_out = 'd0;
+            4'd0: data3 = data0;
+            4'd1: data3 = data1;
+            default : data3 = 'd0;
         endcase
     end
-
+    
+    always@(*)begin
+        case(last_addr[1:0])
+            3'h0: data_out  = data3;
+            3'h1: data_out  = data3>>8;
+            3'h2: data_out  = data3>>16;
+            3'h3: data_out  = data3>>24;
+            /*3'h4: data_out  = data3>>32;
+            3'h5: data_out  = data3>>40;
+            3'h6: data_out  = data3>>48;
+            3'h7: data_out  = data3>>56;*/
+            default: data_out = 'd0;
+        endcase
+    end
+    
 endmodule 
 
 
 module data_write(
     input [3:0]     d_type,
+    input [2:0]     last_addr,
     input [`MEM_BUS_DATA_WIDTH-1:0]   data_in,
     input [7:0]     cnt,
     output reg [63:0]   data_out
@@ -617,10 +648,27 @@ always@(*)begin
     endcase
 end 
 
+
+reg [63:0] data_out_full; 
+
 always@(*)begin
     case(d_type)
-        4'd0:   data_out = {data_out_type0,data_out_type0};
-        4'd1:   data_out = data_out_type1;
+        4'd0:   data_out_full = {data_out_type0,data_out_type0};
+        4'd1:   data_out_full = data_out_type1;
+        default:data_out_full = 64'd0;
+    endcase
+end
+    
+always@(*)begin
+    case(last_addr&{d_type[0],2'b11})
+        3'b000:   data_out = data_out_full;
+        3'b001:   data_out = data_out_full<<8;
+        3'b010:   data_out = data_out_full<<16;
+        3'b011:   data_out = data_out_full<<24;
+        3'b100:   data_out = data_out_full<<32;
+        3'b101:   data_out = data_out_full<<40;
+        3'b110:   data_out = data_out_full<<48;
+        3'b111:   data_out = data_out_full<<54;
         default:data_out = 64'd0;
     endcase
 end

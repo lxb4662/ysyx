@@ -58,6 +58,7 @@ module cache_top(
 
     fence_i,
     fence_d,
+    fence_ok,
 
     r_req,
     r_type,
@@ -91,8 +92,9 @@ module cache_top(
 
     input                           read_abort;
 
-    input fence_i;
-    input fence_d;
+    input                           fence_i;
+    input                           fence_d;
+    input                           fence_ok;
 
     output                          r_req;
     output [`MEM_BUS_TYPE_WIDTH-1:0]r_type;
@@ -158,7 +160,7 @@ module cache_top(
         endcase
     end
 
-    assign idel_next = valid_in?4'h1:4'h0;
+    assign idel_next = fence_d?4'h8:(fence_i?4'h7:(valid_in?4'h1:4'h0));
     assign lookup_next = read_abort?4'h0:(cache_miss)?4'h2:(write_reg?4'h5:(((valid_in))?4'h1:4'h0));
     assign miss_next = (w_rdy||!dirty_seled)?4'h3:4'h2;
     assign replace_next = r_rdy?4'h4:4'h3;

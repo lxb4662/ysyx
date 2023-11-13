@@ -1,5 +1,10 @@
-`include "vsrc/define.v"
-import "DPI-C" function void mtrace(input int pc ,input int addr,input int a0,input int a1,input int len);
+
+`ifndef SOC
+    `include "vsrc/define.v"
+    import "DPI-C" function void mtrace(input int pc ,input int addr,input int a0,input int a1,input int len);
+`endif
+
+
 module ifu(
     input                           clk,
     input                           rst_n,
@@ -29,7 +34,18 @@ module ifu(
 
 
     assign next_pc = jup?jup_addr:(pc + 32'd4);
-
+`ifdef SOC
+    always@(posedge clk)begin
+        if(!rst_n)begin
+            pc <= 32'h30000000;
+        end
+        else begin
+            if(dc_ready_in&&addr_ok||jup)begin
+                pc <= next_pc;
+            end
+        end
+    end
+`else 
     always@(posedge clk)begin
         if(!rst_n)begin
             pc <= 32'h80000000;
@@ -40,6 +56,9 @@ module ifu(
             end
         end
     end
+
+
+`endif
 
     reg [31:0]  PC_if1;
     reg [31:0]  PC_if2;
@@ -120,9 +139,12 @@ module dc(
     input [5+64+1-1:0]      wb_dc,
     
 
-    output reg [287:0]     dc_ex,
+    output reg [289:0]      dc_ex,
+    output  [1:0]           o_fence,
     output                  ready_in,
-    input                   next_stage_ready
+    input                   next_stage_ready,
+    input                   fence_i_ok,
+    input                   fence_d_ok
     
 );
 
@@ -195,6 +217,8 @@ module dc(
     wire ecall;
     wire mret;
 
+    wire fence_i;
+    wire fence_d;
 
     assign lui = (opcode==7'b0110111);
     assign auipc = (opcode==7'b0010111);
@@ -211,7 +235,7 @@ module dc(
     assign ebreak = (inst==32'h00100073);
     assign ecall =  (inst==32'h00000073);
     assign mret =   (inst==32'b00110000001000000000000001110011);
-
+    assign fence_i = (inst==32'h0000100f);
 
     wire [3:0]  alu_sel;
     assign alu_sel = {alu_i,alu_r,alu_iw,alu_w};
@@ -311,9 +335,32 @@ module dc(
 
 
 
+    assign o_fence = fence_fsm;
 
+    reg [1:0]               fence_fsm;
+    always@(posedge clk)begin
+        if(!rst_n)begin
+            fence_fsm <= 'b0;
+        end
+        else begin
+            if(fence_i)begin
+                fence_fsm <= 2'b11;
+            end
+            else begin
+                if(fence_i_ok)begin
+                    fence_fsm[0] <= 1'b0;
+                end
+                if(fence_d_ok)begin
+                    fence_fsm[1] <= 1'b0;
+                end
+            end
+        end
+    end
 
-    assign ready_in = next_stage_ready;
+    wire stall_fence;
+    assign stall_fence = fence_fsm[1]|fence_fsm[0];
+
+    assign ready_in = next_stage_ready&&(!stall_fence);
 
 
 endmodule 
@@ -327,8 +374,8 @@ endmodule
 module exu(
     input               clk,
     input               rst_n,
-    input [287:0]      dc_ex,
-    input [64+5+1-1:0]        sideway,
+    input [289:0]       dc_ex,
+    input [64+5+1-1:0]  sideway,
     output              exu_ready_in,
     output reg          jup,
     output reg [31:0]   jup_addr,
@@ -674,7 +721,7 @@ module lsu(
     input clk,
     input rst_n,
 
-    input [287:0]                      dc_ls,
+    input [289:0]                      dc_ls,
     input [64+5+1-1:0]                  sideway,
     output                              lsu_ready_in,
     output [1+32+64+5+1+1-1:0]                 wb,
@@ -909,7 +956,7 @@ module lsu(
 
     assign sram_r_addr = ls_addr_all;
     assign sram_r_type = {2'b00,sram_len};
-    assign sram_r_req  = load&&(!addr_in_cache)&&valid_i;
+    assign sram_r_req  = load&&(!addr_in_cache)&&valid_i&&((fsm==4'h0)||(fsm==4'h1));
 
     assign sram_busr_out = {sram_r_addr,sram_r_type,sram_r_req};
     assign {sram_re_data,sram_r_rdy,sram_re_valid} = sram_busr_in;
@@ -1352,7 +1399,7 @@ module sram_bus_interconnect(
     always@(*)begin
        case(r_fsm) 
         2'b00:      r_fsm_next = r_fsm_pri;
-        default:    r_fsm_next = is_ret?2'b00:r_fsm;
+        default:    r_fsm_next = is_ret?(r_in_0[0]&r_in_1[0]&r_in_2[0]?r_fsm_pri:2'b00):r_fsm;
        endcase
     end
 
@@ -1384,7 +1431,7 @@ module sram_bus_interconnect(
     end
 
     wire is_ret;
-    assign is_ret = re3_valid;
+    assign is_ret = re3_valid;  
 
 
     wire [1:0]  r_sel;
@@ -1398,9 +1445,9 @@ module sram_bus_interconnect(
         endcase
     end
 
-    assign r_out_0 = {re3_data,r3_rdy&&(r_sel==2'b01),re3_valid&&(r_sel==2'b01)};
-    assign r_out_1 = {re3_data,r3_rdy&&(r_sel==2'b10),re3_valid&&(r_sel==2'b10)};
-    assign r_out_2 = {re3_data,r3_rdy&&(r_sel==2'b11),re3_valid&&(r_sel==2'b11)};
+    assign r_out_0 = {re3_data,r3_rdy&&(r_sel==2'b01),re3_valid&&(r_fsm==2'b01)};
+    assign r_out_1 = {re3_data,r3_rdy&&(r_sel==2'b10),re3_valid&&(r_fsm==2'b10)};
+    assign r_out_2 = {re3_data,r3_rdy&&(r_sel==2'b11),re3_valid&&(r_fsm==2'b11)};
 
 
     /////////////////////////////////   
