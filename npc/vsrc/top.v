@@ -175,8 +175,8 @@ module top(
         ,.next_stage_ready              (lsu_ready_in&&exu_ready_in)
         ,.dc_ex                         (dc_ex)
         ,.o_fence                       ({fence_d,fence_i})
-        ,.fence_i_ok                    ()
-        ,.fence_d_ok                    ()
+        ,.fence_i_ok                    (fence_i_ok)
+        ,.fence_d_ok                    (fence_d_ok)
     );
 
     wire fence_d;
@@ -298,7 +298,7 @@ module top(
         ,.fence_i(fence_i)
         ,.fence_d(1'b0)
 
-        ,.fence_ok(femce_i_ok)
+        ,.fence_ok(fence_i_ok)
 
         ,.read_abort(jup)
 
@@ -363,7 +363,7 @@ module top(
         ,.fence_i(1'b0)
         ,.fence_d(fence_d)
 
-        ,.fence_ok(femce_d_ok)
+        ,.fence_ok(fence_d_ok)
 
         ,.r_req(sram1r_req)
         ,.r_type(sram1r_type)
@@ -501,3 +501,4 @@ module top(
     `endif
 
 endmodule
+

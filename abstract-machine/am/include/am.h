@@ -74,6 +74,7 @@ int      cpu_count   (void);
 int      cpu_current (void);
 int      atomic_xchg (int *addr, int newval);
 
+void     fence       (void);
 #ifdef __cplusplus
 }
 #endif

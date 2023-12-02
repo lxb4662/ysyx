@@ -20,6 +20,6 @@ int main() {
 	}
 
 	check(i == NR_DATA);
-
+	fence();
 	return 0;
 }

@@ -24,7 +24,9 @@ void halt(int code) {
   npc_trap(code);
   while(1);
 }
-
+void fence(){
+  asm volatile("fence.i");
+}
 void _trm_init() {
   int ret = main(mainargs);
   halt(ret);

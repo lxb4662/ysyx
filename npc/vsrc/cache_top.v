@@ -94,7 +94,7 @@ module cache_top(
 
     input                           fence_i;
     input                           fence_d;
-    input                           fence_ok;
+    output                          fence_ok;
 
     output                          r_req;
     output [`MEM_BUS_TYPE_WIDTH-1:0]r_type;
@@ -160,7 +160,7 @@ module cache_top(
         endcase
     end
 
-    assign idel_next = fence_d?4'h8:(fence_i?4'h7:(valid_in?4'h1:4'h0));
+    assign idel_next = fence_d?4'h7:(fence_i?4'h6:(valid_in?4'h1:4'h0));
     assign lookup_next = read_abort?4'h0:(cache_miss)?4'h2:(write_reg?4'h5:(((valid_in))?4'h1:4'h0));
     assign miss_next = (w_rdy||!dirty_seled)?4'h3:4'h2;
     assign replace_next = r_rdy?4'h4:4'h3;
@@ -559,7 +559,7 @@ end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+//FENCE_I
 
 
 
@@ -589,20 +589,15 @@ end
     reg [7:0]   fenced_cnt;
     always@(posedge clk)begin
         if(!rst_n)begin
-            if(!rst_n)begin
-                fenced_cnt <= 8'd0;
-            end
-            else begin
-                if(fsm == 4'd7)begin
-                    if(fenced_cnt_ready_to_go)begin
-                        fenced_cnt <= fenced_cnt + 8'd1;
-                    end
-                    else begin
-                        fenced_cnt <= fenced_cnt;
-                    end
+            fenced_cnt <= 8'd0;
+        end
+        else begin
+            if(fsm == 4'd7)begin
+                if(fenced_cnt_ready_to_go)begin
+                    fenced_cnt <= fenced_cnt + 8'd1;
                 end
                 else begin
-                    fenced_cnt <= 8'd0;
+                    fenced_cnt <= fenced_cnt;
                 end
             end
         end
@@ -636,7 +631,7 @@ end
     wire dirty;
     assign dirty = tag_tep[22];
     wire fenced_cnt_ready_to_go;
-    assign fenced_cnt_ready_to_go = w_rdy&&((fenced_fsm==2'b10)||(fenced_fsm==2'b01));
+    assign fenced_cnt_ready_to_go = w_rdy&&((fenced_fsm==2'b10)||(fenced_fsm==2'b01))||(~dirty&&(fenced_fsm==2'b01));
 
     reg [`CAHCE_L_DATA_WIDTH+`TAG_DATA_WIDTH-1:0] fenced_tep;
     always@(posedge clk)begin
@@ -663,9 +658,13 @@ end
     assign {tag_tep,data_tep} = (fenced_fsm == 2'b01)?(fenced_cnt[7]?{tag1_data_out,data_out1_data}:{tag0_data_out,data_out0_data}):fenced_tep;
 
     assign {fence_d_addr                            ,fence_d_data   ,fence_d_strb      ,fence_d_type         ,fence_d_req                     } = ((fenced_fsm==2'b1)||(fenced_fsm==2'b10))?
-    {       {tag_tep[20:0],fenced_cnt[6:0],4'b0}    ,data_tep       ,~`MEM_BUS_STRB_WIDTH'd0            ,`MEM_BUS_TYPE_WIDTH'd15                ,dirty&&~fenced_fsm_is_chack}:{`MEM_BUS_ADDR_WIDTH'd0,`MEM_BUS_DATA_WIDTH'd0,`MEM_BUS_STRB_WIDTH'd0,`MEM_BUS_TYPE_WIDTH'd0,1'b0};
+            {{tag_tep[20:0],fenced_cnt[6:0],4'b0}        ,data_tep                   ,~`MEM_BUS_STRB_WIDTH'd0    ,`MEM_BUS_TYPE_WIDTH'd15    ,dirty&&~fenced_fsm_is_chack}:
+            {`MEM_BUS_ADDR_WIDTH'd0                      ,`MEM_BUS_DATA_WIDTH'd0     ,`MEM_BUS_STRB_WIDTH'd0     ,`MEM_BUS_TYPE_WIDTH'd0     ,1'b0};
 
-    assign fenced_next = ((fenced_cnt==8'hff)||(fenced_cnt_ready_to_go))?4'h0:4'h7;
+    assign fenced_next = ((fenced_cnt==8'hff)&&(fenced_cnt_ready_to_go))?4'h0:4'h7;
+
+    assign fence_ok = (fsm==4'd7)&&(fenced_cnt==8'd255)&&fenced_cnt_ready_to_go||(fsm==4'd6)&&(fencei_cnt==8'd255);
+
 
 endmodule
 
@@ -1025,4 +1024,5 @@ always @(posedge CLK) begin
 end
 
 endmodule
+
 
