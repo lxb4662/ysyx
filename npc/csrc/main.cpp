@@ -15,6 +15,7 @@ using namespace std;
 //#define PRINT
 #define DIFF
 //#define mtrace
+//#define CLK_PRE_SEC
 #include <unistd.h>
 
 
@@ -323,9 +324,11 @@ int main(int argc, char** argv, char** env) {
       tfp->open("wave.vcd"); //设置输出的文件wave.vcd
     }
     #endif
+    #ifdef PRINT_CLK_PRE_SEC
     if(clk_cnt%10000000==0){
     	printf("clock pre second %ld \n",(clk_cnt/(get_second()-begin_time)));
     }
+    #endif
   }
 
   ///sdb_mainloop();
