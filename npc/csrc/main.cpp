@@ -200,10 +200,12 @@ int run_one_clk_soc_with_test(Vtop_soc *top,VerilatedVcdC* tfp,VerilatedContext*
       for(int i = 1;i<32;i++){
         if(npc.reg[i]!=nemu.reg[i]){
           printf("reg %d is error npc is %16lx\n",i,npc.reg[i]);
-          printf("*********************NEMU*****************\n");
+          printf("******************** NEMU ****************\n");
           print_riscv(&nemu);          
-          printf("*********************NPC *****************\n");
-          print_riscv(&last_npc);
+          printf("***************last  NPC *****************\n");
+          print_riscv(&last_npc);          
+          printf("******************** NPC *****************\n");
+          print_riscv(&npc);
           return 0;
         }
       }
@@ -314,7 +316,7 @@ int main(int argc, char** argv, char** env) {
   while(!Verilated::gotFinish()){
     clk_cnt ++;
     if(!run_one_clk_soc_with_test(top,tfp,contextp)){
-      printf("error: pc %8lx\n",npc.pc);
+      //printf("error: pc %8lx\n",npc.pc);
       return_value = -1;
       break;
     };
