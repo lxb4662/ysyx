@@ -7,8 +7,8 @@
     import "DPI-C" function void status_cpy(input int addr,input int a1,input int a0,input int write,input int pc,input int incache,input int valid);
 `endif
 module top(
-    input clock,
-    input reset,
+    input                           clock,
+    input                           reset,
 
     input                           io_master_arready,
     output                          io_master_arvalid,

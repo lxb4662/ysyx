@@ -1,6 +1,7 @@
 
+`include "vsrc/define.v"
+
 `ifndef SOC
-    `include "vsrc/define.v"
     import "DPI-C" function void mtrace(input int pc ,input int addr,input int a0,input int a1,input int len);
 `endif
 
@@ -56,8 +57,6 @@ module ifu(
             end
         end
     end
-
-
 `endif
 
     reg [31:0]  PC_if1;
@@ -105,6 +104,8 @@ module ifu(
             1'b1:   fsm_next = dc_ready_in?1'b0:1'b1;
         endcase
     end
+
+
     always@(posedge clk)begin
         if(!rst_n)begin
             fsm <= 1'b0;
@@ -317,18 +318,13 @@ module dc(
     assign sra = (alu_r||alu_w||alu_i||alu_iw)&&(func3==3'b101)&&(func7[6:1]==6'b010000);
 
 
-
-
-
-
-
     always@(posedge clk)begin
         if(!rst_n)begin
             dc_ex <= 288'd0;
         end
         else begin
             if(next_stage_ready)begin
-                dc_ex <= {csr_addr,csrr,rs1,rs2,rs1_d,rs2_d,imm,pc,alu_in1_sel,alu_in2_sel,rd_sel,rd,func3,func7,lui,auipc,jal,jalr,bxx,load,store,alu_sel,sub,sra,alu_op,rd_write,ecall,mret,ebreak,valid_i&&(~jup)};
+                dc_ex <= {csr_addr,csrr,rs1,rs2,rs1_d,rs2_d,imm,pc,alu_in1_sel,alu_in2_sel,rd_sel,rd,func3,func7,lui,auipc,jal,jalr,bxx,load,store,alu_sel,sub,sra,alu_op,rd_write,ecall,mret,ebreak,ready_in&&valid_i&&(~jup)};
             end
         end
     end
@@ -343,7 +339,7 @@ module dc(
             fence_fsm <= 'b0;
         end
         else begin
-            if(fence_i)begin
+            if(fence_i&&next_stage_ready)begin
                 fence_fsm <= 2'b11;
             end
             else begin
@@ -511,25 +507,23 @@ module exu(
     wire [63:0] shift_arw;
     wire [63:0] shift_srl;
 
-    `define SHIFT
     `ifdef SHIFT
-    ysyx_050518_shift ysyx_050518_shift(
-    .in0(alu_in1)
-    ,.in1((alu_w||alu_iw)?{59'd0,alu_in2[4:0]}:alu_in2)
-    ,.sra(sra)
-    ,.sra_left_in((alu_w||alu_iw)?alu_in1[31]:alu_in1[63])
-    ,.logic_r(shift_srl)
-    ,.logic_l(alu_sll)
-    ,.a_r_w(shift_arw));
+        ysyx_050518_shift ysyx_050518_shift(
+        .in0(alu_in1)
+        ,.in1((alu_w||alu_iw)?{59'd0,alu_in2[4:0]}:alu_in2)
+        ,.sra(sra)
+        ,.sra_left_in((alu_w||alu_iw)?alu_in1[31]:alu_in1[63])
+        ,.logic_r(shift_srl)
+        ,.logic_l(alu_sll)
+        ,.a_r_w(shift_arw));
 
-    assign alu_srl = (alu_w||alu_iw)?shift_arw:shift_srl;
+        assign alu_srl = (alu_w||alu_iw)?shift_arw:shift_srl;
+    `else
+        assign alu_srl = (alu_w||alu_iw)?shift_arw:shift_srl;
+        assign shift_arw = sra?(alu_in1[31:0] >>> alu_in2[4:0]):(alu_in1[31:0] >> alu_in2);
+        assign shift_srl = sra?(alu_in1 >>> alu_in2[5:0]):(alu_in1 >> alu_in2);
+        assign alu_sll = alu_in1 << alu_in2;
     `endif
-    //`ifndef SHIFT
-    //assign alu_srl = (alu_w||alu_iw)?shift_arw:shift_srl;
-    //assign shift_arw = sra?(alu_in1[31:0] >>> alu_in2[4:0]):(alu_in1[31:0] >> alu_in2);
-    //assign shift_srl = sra?(alu_in1 >>> alu_in2[5:0]):(alu_in1 >> alu_in2);
-    //assign alu_sll = alu_in1 << alu_in2;
-    //`endif
 
 
 
@@ -670,10 +664,6 @@ module exu(
 
 
 
-
-
-
-
     always@(posedge clk)begin
         if(ebreak&&valid_i)
             $finish;
@@ -721,26 +711,26 @@ module lsu(
     input clk,
     input rst_n,
 
-    input [289:0]                      dc_ls,
-    input [64+5+1-1:0]                  sideway,
-    output                              lsu_ready_in,
-    output [1+32+64+5+1+1-1:0]                 wb,
+    input [289:0]                               dc_ls,
+    input [64+5+1-1:0]                          sideway,
+    output                                      lsu_ready_in,
+    output [1+32+64+5+1+1-1:0]                  wb,
 
-    output [64+64-1:0]                      mtime_mtimecmp,
+    output [64+64-1:0]                          mtime_mtimecmp,
 
-    output [32 + 64 + 1 + 2+ 1 -1:0]        cache_bus_req,
+    output [32 + 64 + 1 + 2+ 1 -1:0]            cache_bus_req,
     // addr data valid lenght write
-    input [64 + 1 + 1 -1 :0]                cache_bus_rsp,
+    input [64 + 1 + 1 -1 :0]                    cache_bus_rsp,
     // data addr_on data_ok
 
-    output [1 + 6 + 32 - 1 : 0]             sram_busr_out,
+    output [1 + 6 + 32 - 1 : 0]                 sram_busr_out,
     //  r_addr r_type r_req
-    input [1 + 1 + 64 - 1 :0]              sram_busr_in,
+    input [1 + 1 + 64 - 1 :0]                   sram_busr_in,
     // r_rdy re_data re_valid 
 
-    output [32 + 64 + 6 + 16 + 1 - 1 : 0]  sram_busw_out,
+    output [32 + 64 + 6 + 16 + 1 - 1 : 0]       sram_busw_out,
     //  {sram_w_addr,sram_w_data,sram_w_type,sram_w_strb,sram_w_req};
-    input                                   sram_busw_in   
+    input                                       sram_busw_in   
 
 
 );
@@ -849,8 +839,15 @@ module lsu(
 
     wire [31:0] ls_addr_all;
     assign ls_addr_all = (fsm==4'h0)?ls_addr:ls_addr_reg;
+
+
     wire addr_in_cache;
-    assign addr_in_cache = ls_addr_all[31:28]==4'h8;
+    `ifdef SOC
+        assign addr_in_cache = ls_addr_all[31:28]==4'h8;
+    `else
+        assign addr_in_cache = ls_addr_all[31:28]==4'h8;
+    `endif
+
     wire [63:0] ls_data_all;
     assign ls_data_all = (fsm==4'h0)?rs2_sw:rs2_sw_reg;
 
@@ -1008,6 +1005,10 @@ module lsu(
 
     wire        write_mtime;
     wire        write_mtimecmp;
+
+    assign write_mtime      = store&&valid_i&&(ls_addr_all == 32'd0);
+    assign write_mtimecmp   = store&&valid_i&&(ls_addr_all == 32'd0);
+
 
     reg [63:0]  mtime;
     reg [63:0]  mtimecmp;
@@ -1775,7 +1776,7 @@ module ysyx_050518_div(
     assign _add_in2_r = ~add_in2_r;
     wire c_out_add_0;
 
-    `ifdef full_div
+    `ifdef FULL_DIV
     
     ysyx_050518_add   add0(.in1(add_in1_r[63:0]),.in2(_add_in2_r[63:0]),.c_in(1'b1),.out(add_out[63:0]),.c_out(c_out_add_0));
     ysyx_050518_add   add1(.in1(add_in1_r[127:64]),.in2(_add_in2_r[127:64]),.c_in(c_out_add_0),.out(add_out[127:64]),.c_out());
