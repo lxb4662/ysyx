@@ -339,7 +339,7 @@ module dc(
             fence_fsm <= 'b0;
         end
         else begin
-            if(fence_i&&next_stage_ready)begin
+            if(fence_i&&next_stage_ready&&valid_i)begin
                 fence_fsm <= 2'b11;
             end
             else begin

@@ -495,9 +495,19 @@ module top(
     `ifdef DIFF_TEST
     
         wire wb_valid;
+        wire [4:0]  wb_rd_addr;
+        wire [63:0] wb_data;
+        wire wb_incache;
+        wire wb_write;
+
+        assign wb_write= sideway[0];
+
+        assign wb_data = sideway[69:6];
+        assign wb_rd_addr = sideway[5:1];
+        assign wb_incache = sideway[70];
         assign wb_valid = wb_valid_ls||wb_valid_ex;
         always@(posedge clk)begin
-            status_cpy(sideway[5:1],sideway[37:6],sideway[69:38],sideway[0],wb_pc,sideway[70],wb_valid_ls||wb_valid_ex);
+            status_cpy(wb_rd_addr,wb_data[31:0],wb_data[63:32],wb_write,wb_pc,wb_incache,wb_valid);
         end
 
 
