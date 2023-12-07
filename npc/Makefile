@@ -47,6 +47,10 @@ run: $(BIN)
 	@echo $(INC_PATH)
 	@echo timedatectl status
 	@$^ $(IMG)
+
+soc:
+	cat $(addprefix vsrc/,top.v  if.v lsu.v exu.v add.v cache_top.v ram.v mem2axi.v) > soc.v
+
 sim:
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
 	@echo "Write this Makefile by your self."
