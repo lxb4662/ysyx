@@ -1,9 +1,6 @@
-
-
-
+//`include "vsrc/define.v"
 
 `ifndef SOC
-    `include "vsrc/define.v"
     import "DPI-C" function void status_cpy(input int addr,input int a1,input int a0,input int write,input int pc,input int incache,input int valid);
 `endif
 module top(
@@ -400,13 +397,13 @@ module top(
         .clk(clk)
         ,.rst_n(rst_n)
 
-        ,.m_r_req(sramr_req)
-        ,.m_r_type(sramr_type)
-        ,.m_r_addr(sramr_addr)
-        ,.m_r_rdy(sramr_rdy)
+        ,.ir_req(sramr_req)
+        ,.ir_type(sramr_type)
+        ,.ir_addr(sramr_addr)
+        ,.ir_rdy(sramr_rdy)
 
-        ,.m_re_data(sramre_data)
-        ,.m_re_valid(sramre_valid)
+        ,.ire_data(sramre_data)
+        ,.ire_valid(sramre_valid)
 
         ,.iw_req(sramw_req)
         ,.iw_type(sramw_type)

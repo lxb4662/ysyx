@@ -1,41 +1,20 @@
-`timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 2023/01/13 15:42:14
-// Design Name: 
-// Module Name: mem2axi
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
 
 //  defination of rtype
 //  the number of read bytes
 
 
-`ifndef SOC
-    `include "vsrc/define.v"
-`endif
+`include "vsrc/define.v"
+
 module mem2axi(
     clk,
     rst_n,
     
-    m_r_req,
-    m_r_type,
-    m_r_addr,
-    m_r_rdy,
-    m_re_data,
-    m_re_valid,
+    ir_req,
+    ir_type,
+    ir_addr,
+    ir_rdy,
+    ire_data,
+    ire_valid,
 
     iw_req,
     iw_type,
@@ -83,13 +62,13 @@ module mem2axi(
     input clk;
     input rst_n;
 
-    input m_r_req;
-    input [`MEM_BUS_TYPE_WIDTH-1:0] m_r_type;
-    input [`MEM_BUS_ADDR_WIDTH-1:0] m_r_addr;
-    output m_r_rdy;
+    input ir_req;
+    input [`MEM_BUS_TYPE_WIDTH-1:0] ir_type;
+    input [`MEM_BUS_ADDR_WIDTH-1:0] ir_addr;
+    output ir_rdy;
 
-    output[`MEM_BUS_DATA_WIDTH-1:0] m_re_data;
-    output m_re_valid;
+    output[`MEM_BUS_DATA_WIDTH-1:0] ire_data;
+    output ire_valid;
 
     input iw_req;
     input [`MEM_BUS_TYPE_WIDTH-1:0] iw_type;
@@ -157,7 +136,7 @@ module mem2axi(
 
     always@(*)begin
         case(read_fsm)
-            6'h0: read_fsm_next = m_r_req?6'h1:6'h0;
+            6'h0: read_fsm_next = ir_req?6'h1:6'h0;
             6'h1: read_fsm_next = ar_ready?(ar_unfinished?6'h1:6'h2):6'h1;
             6'h2: read_fsm_next = r_finished?6'h0:6'h2;
             default: read_fsm_next = 6'h0;
@@ -281,13 +260,13 @@ module mem2axi(
             read_reg <= {`MEM_BUS_ADDR_WIDTH'd0,`MEM_BUS_TYPE_WIDTH'd0};
         end
         else begin
-            if(m_r_rdy && m_r_req)begin
-                read_reg <= {m_r_type,m_r_addr};
+            if(ir_rdy && ir_req)begin
+                read_reg <= {ir_type,ir_addr};
             end
         end
     end
 
-    assign m_r_rdy = (read_fsm == 6'd0);
+    assign ir_rdy = (read_fsm == 6'd0);
 
 
     wire [`MEM_BUS_TYPE_WIDTH-1:0] r_type_wire;
@@ -336,10 +315,10 @@ module mem2axi(
         ,.d_type(4'b0)
         ,.cnt(r_cnt)
         ,.data_in0(r_data)
-        ,.data_out(m_re_data)
+        ,.data_out(ire_data)
     );
 
-    assign m_re_valid = r_valid&r_finished;
+    assign ire_valid = r_valid&r_finished;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

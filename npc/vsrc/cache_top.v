@@ -1,25 +1,7 @@
 
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 2023/01/13 03:45:22
-// Design Name: 
-// Module Name: cache_top
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-`include "vsrc/define.v"
+
+//`include "vsrc/define.v"
 /*
 `define MEM_BUS_DATA_WIDTH 256
 `define MEM_BUS_ADDR_WIDTH 32
