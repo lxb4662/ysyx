@@ -140,12 +140,9 @@ module dc(
     input [5+64+1-1:0]      wb_dc,
     
 
-    output reg [289:0]      dc_ex,
-    output  [1:0]           o_fence,
+    output reg [290:0]      dc_ex,
     output                  ready_in,
     input                   next_stage_ready,
-    input                   fence_i_ok,
-    input                   fence_d_ok
     
 );
 
@@ -219,7 +216,6 @@ module dc(
     wire mret;
 
     wire fence_i;
-    wire fence_d;
 
     assign lui = (opcode==7'b0110111);
     assign auipc = (opcode==7'b0010111);
@@ -324,39 +320,16 @@ module dc(
         end
         else begin
             if(next_stage_ready)begin
-                dc_ex <= {csr_addr,csrr,rs1,rs2,rs1_d,rs2_d,imm,pc,alu_in1_sel,alu_in2_sel,rd_sel,rd,func3,func7,lui,auipc,jal,jalr,bxx,load,store,alu_sel,sub,sra,alu_op,rd_write,ecall,mret,ebreak,ready_in&&valid_i&&(~jup)};
+                dc_ex <= {fence_i,csr_addr,csrr,rs1,rs2,rs1_d,rs2_d,imm,pc,alu_in1_sel,alu_in2_sel,rd_sel,rd,func3,func7,lui,auipc,jal,jalr,bxx,load,store,alu_sel,sub,sra,alu_op,rd_write,ecall,mret,ebreak,ready_in&&valid_i&&(~jup)};
             end
         end
     end
 
 
 
-    assign o_fence = fence_fsm;
 
-    reg [1:0]               fence_fsm;
-    always@(posedge clk)begin
-        if(!rst_n)begin
-            fence_fsm <= 'b0;
-        end
-        else begin
-            if(fence_i&&next_stage_ready&&valid_i)begin
-                fence_fsm <= 2'b11;
-            end
-            else begin
-                if(fence_i_ok)begin
-                    fence_fsm[0] <= 1'b0;
-                end
-                if(fence_d_ok)begin
-                    fence_fsm[1] <= 1'b0;
-                end
-            end
-        end
-    end
 
-    wire stall_fence;
-    assign stall_fence = fence_fsm[1]|fence_fsm[0];
-
-    assign ready_in = next_stage_ready&&(!stall_fence);
+    assign ready_in = next_stage_ready;
 
 
 endmodule 

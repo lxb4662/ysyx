@@ -3,7 +3,7 @@
 `ifndef SOC
     import "DPI-C" function void status_cpy(input int addr,input int a1,input int a0,input int write,input int pc,input int incache,input int valid);
 `endif
-module top(
+module ysyx_22050518(
     input                           clock,
     input                           reset,
 
@@ -161,8 +161,8 @@ module top(
     );
 
 
-    wire [1+64+32+5+1+1-1:0]       wb_ex;
-    wire [289:0]           dc_ex;
+    wire [1+64+32+5+1+1-1:0]        wb_ex;
+    wire [290:0]                    dc_ex;
     dc dc(
         .clk                            (clk)
         ,.rst_n                         (rst_n)
@@ -174,9 +174,6 @@ module top(
         ,.ready_in                      (dc_ready_in)
         ,.next_stage_ready              (lsu_ready_in&&exu_ready_in)
         ,.dc_ex                         (dc_ex)
-        ,.o_fence                       ({fence_d,fence_i})
-        ,.fence_i_ok                    (fence_i_ok)
-        ,.fence_d_ok                    (fence_d_ok)
     );
 
     wire fence_d;
@@ -196,7 +193,11 @@ module top(
         ,.jup_addr(jup_addr)
 
 
-        ,.dc_ex({dc_ex[289:1],dc_ex[0]&&(!jup)})
+        ,.o_fence                       ({fence_d,fence_i})
+        ,.i_fencei_ok                    (fence_i_ok)
+        ,.i_fenced_ok                    (fence_d_ok)
+
+        ,.dc_ex({dc_ex[289:1],dc_ex[0]&&(!jup)&&lsu_ready_in})
         ,.sideway(sideway[69:0])
         ,.exu_ready_in(exu_ready_in)
         ,.wb(wb_ex)
@@ -227,7 +228,7 @@ module top(
     lsu lsu(
         .clk(clk)
         ,.rst_n(rst_n)
-        ,.dc_ls({dc_ex[289:1],dc_ex[0]&&(!jup)})
+        ,.dc_ls({dc_ex[289:1],dc_ex[0]&&(!jup)&&exu_ready_in})
         ,.sideway(sideway[64+5+1-1:0])
 
         ,.lsu_ready_in(lsu_ready_in)

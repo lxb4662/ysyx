@@ -15,7 +15,7 @@ using namespace std;
 //#define PRINT
 #define DIFF
 //#define mtrace
-//#define CLK_PRE_SEC
+#define PRINT_CLK_PRE_SEC
 #include <unistd.h>
 
 
@@ -172,7 +172,7 @@ int run_one_without_dump(Vtop_soc *top){
 
 
 
-int run_one_clk_soc_with_test(Vtop_soc *top,VerilatedVcdC* tfp,VerilatedContext* contextp){
+int run_one_clk_soc_with_test(Vtop_soc *top,VerilatedVcdC* tfp,VerilatedContext* contextp,long int *clk_cnt){
   riscv last_npc;
 
   last_npc = riscv(npc);
@@ -182,24 +182,25 @@ int run_one_clk_soc_with_test(Vtop_soc *top,VerilatedVcdC* tfp,VerilatedContext*
   top->eval();
   #ifdef TRACE
   tfp->dump(contextp->time()); //dump wave
-  contextp->timeInc(1); //推动仿真时间
   #endif
-
+  contextp->timeInc(1); //推动仿真时间
   top->clock = 1;
   top->reset = 0;
   top->eval();
   #ifdef TRACE
   tfp->dump(contextp->time()); //dump wave
-  contextp->timeInc(1); //推动仿真时间
   #endif
+  contextp->timeInc(1); //推动仿真时间
   #ifdef DIFF
   if(npc.valid){
+    *clk_cnt  = *clk_cnt + 1;
     if(npc.incache){
       difftest_exec(1);
       get_nemu();
       for(int i = 1;i<32;i++){
         if(npc.reg[i]!=nemu.reg[i]){
-          printf("reg %d is error npc is %16lx\n",i,npc.reg[i]);
+          printf("\nreg %d is error npc is %16lx\n",i,npc.reg[i]);
+          printf("error at time: %ld\n",contextp->time());
           printf("******************** NEMU ****************\n");
           print_riscv(&nemu);          
           printf("***************last  NPC *****************\n");
@@ -219,16 +220,16 @@ int run_one_clk_soc_with_test(Vtop_soc *top,VerilatedVcdC* tfp,VerilatedContext*
           top->eval();
           #ifdef TRACE
           tfp->dump(contextp->time()); //dump wave
-          contextp->timeInc(1); //推动仿真时间
           #endif
+          contextp->timeInc(1); //推动仿真时间
 
           top->clock = 1;
           top->reset = 0;
           top->eval();
           #ifdef TRACE
           tfp->dump(contextp->time()); //dump wave
-          contextp->timeInc(1); //推动仿真时间
           #endif
+          contextp->timeInc(1); //推动仿真时间
           if(npc.valid&&npc.incache){
             break;
           }
@@ -314,8 +315,8 @@ int main(int argc, char** argv, char** env) {
   int begin_time = get_second();
   int return_value = 0;
   while(!Verilated::gotFinish()){
-    clk_cnt ++;
-    if(!run_one_clk_soc_with_test(top,tfp,contextp)){
+    //clk_cnt ++;
+    if(!run_one_clk_soc_with_test(top,tfp,contextp,&clk_cnt)){
       //printf("error: pc %8lx\n",npc.pc);
       return_value = -1;
       break;
@@ -333,7 +334,7 @@ int main(int argc, char** argv, char** env) {
     #endif
   }
 
-  ///sdb_mainloop();
+  //sdb_mainloop();
 
 
   for (int i =0;i<=500;i++){

@@ -57,7 +57,8 @@ module lsu(
     wire        mret;
     wire        ebreak;
     wire        valid_i;
-    assign {csr_addr,csrr,rs1_a,rs2_a,rs1,rs2,imm,pc,alu_in1_sel,alu_in2_sel,rd_sel,rd,func3,func7,lui,auipc,jal,jalr,bxx,load,store,alu_sel,sub,sra,alu_op,rd_write,ecall,mret,ebreak,valid_i} = dc_ls;
+    wire        fence_inst;
+    assign {fence_inst,csr_addr,csrr,rs1_a,rs2_a,rs1,rs2,imm,pc,alu_in1_sel,alu_in2_sel,rd_sel,rd,func3,func7,lui,auipc,jal,jalr,bxx,load,store,alu_sel,sub,sra,alu_op,rd_write,ecall,mret,ebreak,valid_i} = dc_ls;
 
     wire [63:0] sideway_data;
     wire [4:0]  sideway_addr;
@@ -90,36 +91,45 @@ module lsu(
 
     always@(*)begin
         case(fsm)
-            4'h0:   fsm_next = valid_i?(load?(addr_ok_all?4'h2:4'h1):(store?(addr_ok_all?4'h0:4'h1):4'h0)):4'h0;
-            4'h1:   fsm_next = addr_ok_all?(store?4'h0:4'h2):4'h1;
+            4'h0:   fsm_next = valid_i&&lsu_ready_in&&(load||store);
+            4'h1:   fsm_next = addr_ok_all?(ls_store_buf?4'h0:4'h2):4'h1;
             4'h2:   fsm_next = data_ok_all?'h0:4'h2;
-        default:    fsm_next = 'b0;
-    endcase
+            default:    fsm_next = 'b0;
+        endcase
     end
 
+    wire addr_phase;
+    wire data_phase;
 
-    assign lsu_ready_in = valid_i?(load?(data_ok_all):(store?(addr_ok_all):1'b1)):1'b1;
+    assign addr_phase = fsm==4'h1;
+    assign data_phase = fsm==4'h2;
 
-    wire addr_ok;
-    wire data_ok;
-
-    assign addr_ok = cache_addr_ok;
-    assign data_ok = cache_data_ok;
-
-    reg [32+64-1:0] lsu_reg;
-    always@(posedge clk)begin
+    reg [1+3+1+5+32+6+1+1+64+64-1:0]    r_lsu_buf;
+    always@(posedge clk )begin
         if(!rst_n)begin
-            lsu_reg <= 'd0;
+            r_lsu_buf <= 'b0;
         end
-        else if((fsm==4'h0)&&valid_i&&(load||store)) begin
-            lsu_reg <= {ls_addr,rs2_sw};
+        else if(valid_i&&lsu_ready_in)begin
+            r_lsu_buf <= {addr_in_cache,func3,rd_write,rd,pc,ls_len,load,store,ls_addr,rs2_sw};
         end
     end
 
-    
-    wire [31:0] ls_addr_reg;
-    wire [63:0] rs2_sw_reg;
-    assign {ls_addr_reg,rs2_sw_reg} = lsu_reg;
+    wire        ls_addr_in_cache_buf;
+    wire [2:0]  ls_func3_buf;
+    wire        ls_rd_write_buf;
+    wire [4:0]  ls_rd_buf;
+    wire [31:0] ls_pc_buf;
+    wire [5:0]  ls_len_buf;
+    wire        ls_load_buf;
+    wire        ls_store_buf;
+    wire [31:0] ls_addr_buf;
+    wire [63:0] ls_data_buf;
+
+    assign {ls_addr_in_cache_buf,ls_func3_buf,ls_rd_write_buf,ls_rd_buf,ls_pc_buf,ls_len_buf,ls_load_buf,ls_store_buf,ls_addr_buf,ls_data_buf} = r_lsu_buf;
+
+    assign lsu_ready_in = fsm==4'b0;
+
+
 
     ///////////////////////////////////////////
     // addr
@@ -128,21 +138,16 @@ module lsu(
     wire [31:0] ls_addr;
     assign ls_addr = rs1_sw[31:0] + imm[31:0];
 
-    wire [63:0] store_data = rs2_sw;
 
-    wire [31:0] ls_addr_all;
-    assign ls_addr_all = (fsm==4'h0)?ls_addr:ls_addr_reg;
 
 
     wire addr_in_cache;
     `ifdef SOC
-        assign addr_in_cache = ls_addr_all[31:28]==4'h8;
+        assign addr_in_cache = ls_addr[31:28]==4'h8;
     `else
-        assign addr_in_cache = ls_addr_all[31:28]==4'h8;
+        assign addr_in_cache = ls_addr[31:28]==4'h8;
     `endif
 
-    wire [63:0] ls_data_all;
-    assign ls_data_all = (fsm==4'h0)?rs2_sw:rs2_sw_reg;
 
     /////////////////////////////////   
     // length gen
@@ -159,11 +164,14 @@ module lsu(
     end 
     wire [1:0]  cache_len = func3[1:0];
 
-    wire load_unsign;
-    assign load_unsign = load&&(func3[2]==1'b1);
+    wire [5:0]  ls_len;
+    assign ls_len = addr_in_cache?{4'b0,cache_len}:{2'b0,sram_len};
+
 
     wire [63:0] load_ext_in;
-    assign load_ext_in = data_ok?cache_rdata[63:0]:sram_re_data[63:0];
+    assign load_ext_in = cache_data_ok?cache_rdata[63:0]:sram_re_data[63:0];
+
+
 /*
     always@(posedge clk)begin
         if(store&&valid_i&&addr_ok)begin
@@ -173,7 +181,7 @@ module lsu(
 */
 
     load_ext load_ext(
-        .func3(func3)
+        .func3(ls_func3_buf)
         ,.data_in(load_ext_in)
         ,.data_out(wb_data)
     );
@@ -195,7 +203,7 @@ module lsu(
             wb_reg <= 'b0;            
         end
         else begin
-            wb_reg <= {addr_in_cache,pc,wb_data,rd,rd_write,valid_i&&((data_ok_all&&load)||(store&&addr_ok_all))};
+            wb_reg <= {ls_addr_in_cache_buf,ls_pc_buf,wb_data,ls_rd_buf,ls_rd_write_buf,((data_phase&&data_ok_all&&ls_load_buf)||(addr_phase&&ls_store_buf&&addr_ok_all))};
         end
     end
     assign wb = wb_reg;
@@ -217,17 +225,14 @@ module lsu(
     wire        cache_addr_ok;
     wire        cache_data_ok;
 
-    assign cache_addr   = ls_addr_all;
-    assign cache_wdata  = ls_data_all;
-    assign cache_type   = cache_len;
-    assign cache_valid  = (load||store)&&addr_in_cache&&valid_i&&((fsm==4'h0)||(fsm==4'h1));
-    assign cache_write  = addr_in_cache&&store&&valid_i;
+    assign cache_addr   = ls_addr_buf;
+    assign cache_wdata  = ls_data_buf;
+    assign cache_type   = ls_len_buf[1:0];
+    assign cache_valid  = (ls_load_buf||ls_store_buf)&&ls_addr_in_cache_buf&&addr_phase;
+    assign cache_write  = ls_store_buf;
 
     assign cache_bus_req = {cache_addr,cache_wdata,cache_type,cache_valid,cache_write};
     assign {cache_rdata,cache_addr_ok,cache_data_ok} = cache_bus_rsp;
-
-
-
 
 
 
@@ -244,9 +249,9 @@ module lsu(
     wire [63:0]     sram_re_data;
     wire            sram_re_valid;
 
-    assign sram_r_addr = ls_addr_all;
-    assign sram_r_type = {2'b00,sram_len};
-    assign sram_r_req  = load&&(!addr_in_cache)&&valid_i&&((fsm==4'h0)||(fsm==4'h1));
+    assign sram_r_addr = ls_addr_buf;
+    assign sram_r_type = ls_len_buf;
+    assign sram_r_req  = ls_load_buf&&(!ls_addr_in_cache_buf)&&addr_phase;
 
     assign sram_busr_out = {sram_r_addr,sram_r_type,sram_r_req};
     assign {sram_re_data,sram_r_rdy,sram_re_valid} = sram_busr_in;
@@ -263,11 +268,11 @@ module lsu(
 
     wire            sram_w_rdy;
 
-    assign sram_w_addr = ls_addr_all;
-    assign sram_w_data = ls_data_all;
-    assign sram_w_type = {2'b00,sram_len};
+    assign sram_w_addr = ls_addr_buf;
+    assign sram_w_data = ls_data_buf;
+    assign sram_w_type = ls_len_buf;
     assign sram_w_strb = ~16'd0;
-    assign sram_w_req  = (store)&&(~addr_in_cache)&&valid_i&&((fsm==4'h0)||(fsm==4'h1));
+    assign sram_w_req  = (ls_store_buf)&&(~ls_addr_in_cache_buf)&&addr_phase;
 
     assign sram_busw_out = {sram_w_addr,sram_w_data,sram_w_type,sram_w_strb,sram_w_req};
     assign sram_w_rdy = sram_busw_in;
@@ -283,13 +288,13 @@ module lsu(
     assign sram_store_addr_ok = sram_w_rdy;
 
     wire sram_addr_ok;
-    assign sram_addr_ok = load?sram_load_addr_ok:sram_store_addr_ok;
+    assign sram_addr_ok = ls_load_buf?sram_load_addr_ok:sram_store_addr_ok;
 
 
     wire addr_ok_all;
     wire data_ok_all;
-    assign addr_ok_all = addr_in_cache?cache_addr_ok:sram_addr_ok;
-    assign data_ok_all = addr_in_cache?cache_data_ok:sram_load_data_ok;
+    assign addr_ok_all = ls_addr_in_cache_buf?cache_addr_ok:sram_addr_ok;
+    assign data_ok_all = ls_addr_in_cache_buf?cache_data_ok:sram_load_data_ok;
 
 
     /////////////////////////////////   
@@ -299,8 +304,8 @@ module lsu(
     wire        write_mtime;
     wire        write_mtimecmp;
 
-    assign write_mtime      = store&&valid_i&&(ls_addr_all == 32'd0);
-    assign write_mtimecmp   = store&&valid_i&&(ls_addr_all == 32'd0);
+    assign write_mtime      = ls_store_buf&&valid_i&&(ls_addr_buf == 32'd0);
+    assign write_mtimecmp   = ls_store_buf&&valid_i&&(ls_addr_buf == 32'd0);
 
 
     reg [63:0]  mtime;

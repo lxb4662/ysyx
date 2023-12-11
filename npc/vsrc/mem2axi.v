@@ -154,12 +154,12 @@ module mem2axi(
 
     // read offset only used in the unbrust mode, to get the final addr
     wire [`AXI_ADDR_WIDTH-1:0] read_offset;
-    assign read_offset = support_64bits?{21'b0,ar_cnt,3'b000}:{22'b0,ar_cnt,2'b00};
+    assign read_offset = w_support_64bits?{21'b0,ar_cnt,3'b000}:{22'b0,ar_cnt,2'b00};
 
 
 
     wire [7:0]  ar_cnt_i;
-    assign ar_cnt_i = support_64bits?ar_cnt_i_64:ar_cnt_i_32;
+    assign ar_cnt_i = w_support_64bits?ar_cnt_i_64:ar_cnt_i_32;
 
     // to generate the number of tansations for the 32 bits data width
 
@@ -287,7 +287,7 @@ module mem2axi(
     assign ar_valid = read_fsm==6'b1;
     assign ar_brust = `AXI_BRUS_WIDTH'b01;
     assign ar_len   = support_brust?ar_cnt_i[`AXI_LEN_WIDTH-1:0]:`AXI_LEN_WIDTH'b0;                    
-    assign ar_size  = support_64bits?`AXI_SIZE_WIDTH'b011:`AXI_SIZE_WIDTH'b010;
+    assign ar_size  = w_support_64bits?`AXI_SIZE_WIDTH'b011:`AXI_SIZE_WIDTH'b010;
     
     assign r_ready = (read_fsm_r == 6'b1)?1'b1:1'b0;
     /* THOSE CODE IS UNUSED 
@@ -449,7 +449,7 @@ module mem2axi(
     assign w_strb = ~64'd0;
     assign w_last = 'b1;
     data_write dw1(
-        .d_type(4'd0)
+        .d_type(w_support_64bits)
         ,.last_addr(iw_addr_wire[2:0])
         ,.data_in(iw_data_wire)
         ,.cnt(w_cnt)
@@ -468,7 +468,7 @@ module mem2axi(
     end
 
 
-    assign aw_valid = (aw_fsm==2'h1)||(aw_fsm==2'b10);
+    assign aw_valid = (aw_fsm==2'h1);
     assign aw_addr = iw_addr_wire + aw_cnt * (w_support_64bits?32'd8:32'd4);
     assign aw_id   = `AXI_ID_WIDTH'b0;
     assign aw_len  = `AXI_LEN_WIDTH'd0;
@@ -483,8 +483,7 @@ module mem2axi(
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    wire support_64bits;
-    assign support_64bits = 1'b0;
+
 
 
     wire w_support_64bits;
@@ -591,11 +590,11 @@ endmodule
 
 
 module data_write(
-    input [3:0]     d_type,
-    input [2:0]     last_addr,
-    input [`MEM_BUS_DATA_WIDTH-1:0]   data_in,
-    input [7:0]     cnt,
-    output reg [63:0]   data_out
+    input [3:0]                         d_type,
+    input [2:0]                         last_addr,
+    input [`MEM_BUS_DATA_WIDTH-1:0]     data_in,
+    input [7:0]                         cnt,
+    output reg [63:0]                   data_out
 );
 //  type 0 is 32 bits 
 //  type 1 is 64 bits

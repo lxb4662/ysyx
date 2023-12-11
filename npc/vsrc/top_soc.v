@@ -34,7 +34,7 @@ module top_soc(
     assign S_AXI_0_bready = 1'b1;
 
 
-top top(
+ysyx_22050518 top(
     .clock(clock)
     ,.reset(~reset)
 

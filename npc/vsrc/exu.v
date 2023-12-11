@@ -3,8 +3,11 @@
 module exu(
     input               clk,
     input               rst_n,
-    input [289:0]       dc_ex,
+    input [290:0]       dc_ex,
     input [64+5+1-1:0]  sideway,
+    input               i_fencei_ok,
+    input               i_fenced_ok,
+    output [1:0]        o_fence,
     output              exu_ready_in,
     output reg          jup,
     output reg [31:0]   jup_addr,
@@ -40,7 +43,8 @@ module exu(
     wire        mret;
     wire        ebreak;
     wire        valid_i;
-    assign {csr_addr,csrr,rs1_a,rs2_a,rs1,rs2,imm,pc,alu_in1_sel,alu_in2_sel,rd_sel,rd,func3,func7,lui,auipc,jal,jalr,bxx,load,store,alu_sel,sub,sra,alu_op,rd_write,ecall,mret,ebreak,valid_i} = dc_ex;
+    wire        fence_inst;
+    assign {fence_inst,csr_addr,csrr,rs1_a,rs2_a,rs1,rs2,imm,pc,alu_in1_sel,alu_in2_sel,rd_sel,rd,func3,func7,lui,auipc,jal,jalr,bxx,load,store,alu_sel,sub,sra,alu_op,rd_write,ecall,mret,ebreak,valid_i} = dc_ex;
 
     wire [63:0] sideway_data;
     wire [4:0]  sideway_addr;
@@ -86,21 +90,39 @@ module exu(
         end
     end
 
-    reg [64+64-1:0] rs1_rs2_reg;
+
+    wire long_inst;
+    assign long_inst = fsm==4'b01||fsm==4'b10;
+
+    reg [1+5+32+2+3+4+64+64-1:0] r_long_inst_buf;
     always@(posedge clk)begin
         if(!rst_n)begin
-            rs1_rs2_reg <= 'b0;
+            r_long_inst_buf <= 'b0;
         end
         else begin
-            if(fsm==4'h0)begin
-                rs1_rs2_reg <= {rs1_sw,rs2_sw};
+            if(valid_i&&exu_ready_in)begin
+                r_long_inst_buf <= {alu_iw|alu_w,rd,pc,rd_sel,func3,alu_op,rs1_sw,rs2_sw};
             end
         end
     end
 
+    wire [63:0] w_long_inst_rs1;
+    wire [63:0] w_long_inst_rs2;
+    wire [3:0]  w_long_inst_aluop;
+    wire [2:0]  w_long_inst_func3;
+    wire [1:0]  w_long_inst_rd_sel;
+    wire [31:0] w_long_inst_pc;
+    wire [4:0]  w_long_inst_rd;
+    wire        w_long_inst_w;
 
+    assign {w_long_inst_w,w_long_inst_rd,w_long_inst_pc,w_long_inst_rd_sel,w_long_inst_func3,w_long_inst_aluop,w_long_inst_rs2,w_long_inst_rs1} = r_long_inst_buf;
 
-
+    assign exu_ready_in =   (fsm==4'b00) && (!fence_hold);
+    /*
+                            (fsm==4'b0)&&(alu_op[3]!=1'b1)||
+                            (fsm==4'b1)&&mul_out_valid||
+                            (!valid_i)||
+                            (fsm==4'h2)&&div_out_valid&&(!fence_hold);*/
 
     wire [63:0] alu_in1_1;
     wire [63:0] alu_in2_1;
@@ -112,7 +134,6 @@ module exu(
     assign alu_in1 = (alu_w||alu_iw)?{32'b0,alu_in1_1[31:0]}:alu_in1_1;
     assign alu_in2 = (alu_w||alu_iw)?{32'b0,alu_in2_1[31:0]}:alu_in2_1;
 
-    assign exu_ready_in = (fsm==4'b0)&&(alu_op[3]!=1'b1)||(fsm==4'b1)&&mul_out_valid||(!valid_i)||(fsm==4'h2)&&div_out_valid;
 
     reg [63:0] alu_out;
 
@@ -198,9 +219,9 @@ module exu(
         ,.mul_valid(fsm==4'h1)
         ,.flush(1'b0)
         ,.mulw()
-        ,.mul_signed({alu_op[1],alu_op[1]&alu_op[0]})
-        ,.multiplicand(rs1_rs2_reg[127:64])
-        ,.multiplier(rs1_rs2_reg[63:0])
+        ,.mul_signed({w_long_inst_aluop[1],w_long_inst_aluop[1]&w_long_inst_aluop[0]})
+        ,.multiplicand(w_long_inst_rs2)
+        ,.multiplier(w_long_inst_rs1)
         ,.mul_ready(mul_ready)
         ,.out_valid(mul_out_valid)
         ,.result_hi(mul_hi)
@@ -215,11 +236,11 @@ module exu(
     ysyx_050518_div div(
         .clk(clk)
         ,.rst_n(rst_n)
-        ,.dividend(rs1_rs2_reg[127:64])
-        ,.divisor(rs1_rs2_reg[63:0])
+        ,.dividend(w_long_inst_rs2)
+        ,.divisor(w_long_inst_rs1)
         ,.div_valid(fsm==4'h2)
         ,.divw(1'b0)
-        ,.div_signed(!func3[0])
+        ,.div_signed(!w_long_inst_func3[0])
         ,.flush(1'b0)
 
         ,.out_ready(div_ready)
@@ -236,8 +257,11 @@ module exu(
 
     assign alu_add = alu_in1+((sub==1'b1)?(~alu_in2+64'b1):alu_in2);
 
+    wire [3:0] alu_out_sel;
+    assign alu_out_sel = (fsm==4'b00)?alu_op:w_long_inst_aluop;
+
     always@(*)begin
-        case(alu_op)
+        case(alu_out_sel)
             4'b0000:    alu_out = alu_add;
             4'b0001:    alu_out = alu_sll;
             4'b0010:    alu_out = alu_slt;
@@ -256,6 +280,31 @@ module exu(
             4'b1111:    alu_out = alu_rem;
         endcase
     end
+
+
+    reg [1:0]       fence_fsm;
+    wire            fence_hold;
+    assign fence_hold = fence_fsm[0]|fence_fsm[1];
+    always@(posedge clk or negedge rst_n)begin
+        if(!rst_n)begin
+            fence_fsm <= 2'b00;
+        end
+        else begin
+            if(fence_inst&&valid_i&&exu_ready_in)begin
+                fence_fsm <= 2'b11;
+            end
+            else begin
+                if(i_fencei_ok)begin
+                    fence_fsm[0] <= 1'b0;
+                end
+                if(i_fenced_ok)begin
+                    fence_fsm[1] <= 1'b0;
+                end
+            end
+        end
+    end
+
+    assign o_fence = fence_fsm;
 
 
     reg  [63:0] csr_in;
@@ -283,8 +332,8 @@ module exu(
 
         ,.addr(csr_addr)
         ,.data_in(csr_in)
-        ,.write(csrr&&valid_i)
-        ,.ecall(ecall&&valid_i)
+        ,.write(csrr&&valid_i&&exu_ready_in)
+        ,.ecall(ecall&&valid_i&&exu_ready_in)
         ,.epc({32'b0,pc})
         ,.no(64'h11)
         ,.data_out(csr_out)
@@ -298,7 +347,7 @@ module exu(
 
 
     always@(posedge clk)begin
-        if(ebreak&&valid_i)
+        if(ebreak&&valid_i&&exu_ready_in)
             $finish;
     end
 
@@ -308,15 +357,18 @@ module exu(
             jup_addr<=32'b0;
         end
         else begin
-            jup<=(jalr||jal||ecall||mret)&&valid_i||(bxx&&b_ans&&valid_i);
+            jup<=(jalr||jal||ecall||mret)&&valid_i&&exu_ready_in||(bxx&&b_ans&&valid_i&&exu_ready_in);
             jup_addr <= ecall?mtvec[31:0]:(mret?mepc[31:0]:alu_add[31:0]);
         end
     end
 
     reg [63:0]  rd_data;
+
+    wire [1:0]  w_rd_sel;
+    assign w_rd_sel = long_inst?w_long_inst_rd_sel:rd_sel;
     always@(*)begin
-        case(rd_sel)
-            2'b00:  rd_data = (alu_iw||alu_w)?{{32{alu_out[31]}},alu_out[31:0]}:alu_out;
+        case(w_rd_sel)
+            2'b00:  rd_data = long_inst?(w_long_inst_w?{{32{alu_out[31]}},alu_out[31:0]}:alu_out):((alu_iw||alu_w)?{{32{alu_out[31]}},alu_out[31:0]}:alu_out);
             2'b01:  rd_data = {32'b0,pc} + 64'd4;
             2'b10:  rd_data = imm;
             2'b11:  rd_data = csr_out;
@@ -325,13 +377,19 @@ module exu(
 
     reg [32+64+5+1+1-1:0]    wb_reg;
     wire rd_valid;
-    assign rd_valid = valid_i&&(~(load||store))&&(~alu_op[3])||valid_i&&(~(load||store))&&((alu_op[3:2]==2'b10)&&mul_out_valid||(alu_op[3:2]==2'b11)&&div_out_valid)||valid_i&&csrr;
+    assign rd_valid =   valid_i&&exu_ready_in&&(~(load||store))&&(~alu_op[3])&&(~long_inst)||
+                        long_inst&&((mul_out_valid&&fsm==4'b01)||(div_out_valid&&fsm==4'b10))||
+                        valid_i&&exu_ready_in&&csrr&&(~long_inst)||
+                        valid_i&&exu_ready_in&&fence_inst&&(~long_inst);
+
+    wire [4:0]  fin_rd;
+    assign fin_rd = long_inst?w_long_inst_rd:rd;
     always@(posedge clk)begin
         if(!rst_n)begin
             wb_reg <= 'd0;
         end
         else begin
-            wb_reg <= {pc,rd_data,rd,rd_write,rd_valid};
+            wb_reg <= {pc,rd_data,fin_rd,(rd_write||long_inst)&&rd_valid,rd_valid};
         end
     end
 
