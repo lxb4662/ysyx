@@ -104,7 +104,7 @@ module mem2axi(
 
     output [`AXI_DATA_WIDTH-1:0] w_data;
     output [`AXI_ID_WIDTH-1:0]   w_id;
-    output [`AXI_DATA_WIDTH-1:0] w_strb;
+    output [`AXI_STRB_WIDTH-1:0] w_strb;
     output                       w_last;
     output                       w_valid;
     input                        w_ready;
@@ -446,7 +446,7 @@ module mem2axi(
     end
 
     assign w_valid = (w_fsm==2'b01)||(w_fsm==2'b10);;
-    assign w_strb = ~64'd0;
+    assign w_strb = w_support_64bits?~8'd0:8'b00001111;
     assign w_last = 'b1;
     data_write dw1(
         .d_type(w_support_64bits)
@@ -489,7 +489,7 @@ module mem2axi(
     wire w_support_64bits;
 
     `ifdef SOC_SDRAM_64
-		assign w_support_64bits = iw_addr_wire[31:28]==4'h8;
+		assign w_support_64bits =  (iw_addr_wire[31:28]==4'h8)||(iw_addr_wire[31:26]==6'h3f);
     `else
     	assign w_support_64bits = 1'b0;
     `endif

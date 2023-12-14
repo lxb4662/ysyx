@@ -371,7 +371,7 @@ module cache_top(
             4'd4: data_r_r = {1'b0         ,~re_valid    ,ind_reg       ,data_data_refill      ,random        ,bwen_data_refill};
             4'd5: data_r_r = {1'b0         ,1'b0         ,ind_reg       ,write_write_data      ,hit1_reg      ,~bwen_data_write};
             4'd6: data_r_r = {1'b1         ,1'b1         ,`INDX_WIDTH'd0,`CAHCE_L_DATA_WIDTH'd0,1'b0          ,bwen_data_idel};
-            4'd7: data_r_r = {1'b0         ,1'b1         ,`INDX_WIDTH'd0,`CAHCE_L_DATA_WIDTH'd0,1'b0          ,bwen_data_idel};
+            4'd7: data_r_r = {1'b0         ,1'b1         ,fenced_cnt[5:0],`CAHCE_L_DATA_WIDTH'd0,1'b0          ,bwen_data_idel};
          default: data_r_r = {1'b1         ,1'b1         ,`INDX_WIDTH'd0,`CAHCE_L_DATA_WIDTH'd0,1'b0          ,bwen_data_idel};
         endcase 
     end
