@@ -3,7 +3,7 @@
 #include "time.h"
 
 #include "vga.h"
-static uint8_t pmem[0x8000000] = {};
+static uint8_t pmem[0x20000000] = {};
 
 long long mem_read(long long a, int len){
     long long unsigned int addr = a;
@@ -90,7 +90,7 @@ int mem_write(long long a, int len, long long data){
   }
 
   if(addr==0xa00003f8){
-    printf("%c",(char)data);
+    printf("%c",(char)data&0xff);
   }
   if((addr>=0xa1000000)&&(addr<=(0xa1000000+400*300*4))){
     for (int i = 0;i<len;i++){

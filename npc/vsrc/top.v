@@ -131,7 +131,13 @@ module ysyx_22050518(
 
     wire clk;
     wire rst_n;
-    assign rst_n = reset;
+    `ifdef SOC
+        assign rst_n = ~reset;
+    `else
+
+        assign rst_n = reset;
+    `endif 
+
     assign clk = clock;
 
     wire [32+2+1-1:0]       r;
@@ -162,7 +168,7 @@ module ysyx_22050518(
 
 
     wire [1+64+32+5+1+1-1:0]        wb_ex;
-    wire [290:0]                    dc_ex;
+    wire [291:0]                    dc_ex;
     dc dc(
         .clk                            (clk)
         ,.rst_n                         (rst_n)
@@ -183,6 +189,10 @@ module ysyx_22050518(
     wire exu_ready_in;
     wire jup;
     wire [31:0] jup_addr;
+
+
+    wire [64+64-1:0]    mtime_mtimecmp;
+
     exu exu(
         
         .clk(clk)
@@ -192,7 +202,8 @@ module ysyx_22050518(
         ,.jup(jup)
         ,.jup_addr(jup_addr)
 
-
+        ,.mtime(mtime_mtimecmp[127:64])
+        ,.mtimecmp(mtime_mtimecmp[63:0])
         ,.o_fence                       ({fence_d,fence_i})
         ,.i_fencei_ok                    (fence_i_ok)
         ,.i_fenced_ok                    (fence_d_ok)
@@ -231,8 +242,10 @@ module ysyx_22050518(
         ,.dc_ls({dc_ex[289:1],dc_ex[0]&&(!jup)&&exu_ready_in})
         ,.sideway(sideway[64+5+1-1:0])
 
+        ,.mtime_mtimecmp(mtime_mtimecmp)
         ,.lsu_ready_in(lsu_ready_in)
         ,.wb(wb_ls)
+
 
         ,.cache_bus_req({dcache_addr,dcache_data,dcache_len,dcache_valid_in,dcache_write})
         ,.cache_bus_rsp({dcache_data_out,dcache_addr_ok,dcache_data_ok})
@@ -409,7 +422,6 @@ module ysyx_22050518(
         ,.iw_req(sramw_req)
         ,.iw_type(sramw_type)
         ,.iw_addr(sramw_addr)
-        ,.iw_strb(sramw_strb)
         ,.iw_data(sramw_data)
         ,.iw_rdy(sramw_rdy)
 

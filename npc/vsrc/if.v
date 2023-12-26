@@ -140,7 +140,7 @@ module dc(
     input [5+64+1-1:0]      wb_dc,
     
 
-    output reg [290:0]      dc_ex,
+    output reg [291:0]      dc_ex,
     output                  ready_in,
     input                   next_stage_ready,
     
@@ -184,7 +184,8 @@ module dc(
         ,.imm_u(imm_u)
         ,.imm_b(imm_b)
         ,.imm_jal(imm_j)
-        ,.sel({lui||auipc,jal,bxx,store,alu_iw||alu_i||load||jalr})
+        ,.imm_csrr(rs1)
+        ,.sel({csr_imm_inst,lui||auipc,jal,bxx,store,alu_iw||alu_i||load||jalr})
         ,.out(imm)
     );
 
@@ -234,6 +235,27 @@ module dc(
     assign mret =   (inst==32'b00110000001000000000000001110011);
     assign fence_i = (inst==32'h0000100f);
 
+
+    /////////////// CSR ///////////////////
+    wire inst_csrw;
+    wire inst_csrs;
+    wire inst_csrc;
+
+    assign inst_csrw = valid_i&&csrr&&(func3[1:0]==2'b01);
+    assign inst_csrs = valid_i&&csrr&&(func3[1:0]==2'b10);
+    assign inst_csrc = valid_i&&csrr&&(func3[1:0]==2'b11);
+
+
+    wire    csr_write;
+    wire    csr_read;
+
+    assign csr_write = (inst_csrs||inst_csrc)&&(rs1!=5'd0)||inst_csrw;
+    assign csr_read  = inst_csrw&&(rd!=5'd0)||inst_csrs||inst_csrc;
+    assign csr_imm_inst  = csrr&&func3[2];
+
+
+
+
     wire [3:0]  alu_sel;
     assign alu_sel = {alu_i,alu_r,alu_iw,alu_w};
 
@@ -268,7 +290,7 @@ module dc(
     assign {alu_in1_sel,alu_in2_sel} = {auipc||jal||bxx,alu_i||alu_iw||auipc||jal||jalr||bxx};
 
     wire rd_write;
-    assign rd_write = alu_i||alu_iw||alu_r||alu_w||load||lui||auipc||jal||jalr||csrr;
+    assign rd_write = alu_i||alu_iw||alu_r||alu_w||load||lui||auipc||jal||jalr||(csrr&&csr_read);
 
 
     reg [1:0]  rd_sel;
@@ -316,11 +338,11 @@ module dc(
 
     always@(posedge clk)begin
         if(!rst_n)begin
-            dc_ex <= 288'd0;
+            dc_ex <= 'd0;
         end
         else begin
             if(next_stage_ready)begin
-                dc_ex <= {fence_i,csr_addr,csrr,rs1,rs2,rs1_d,rs2_d,imm,pc,alu_in1_sel,alu_in2_sel,rd_sel,rd,func3,func7,lui,auipc,jal,jalr,bxx,load,store,alu_sel,sub,sra,alu_op,rd_write,ecall,mret,ebreak,ready_in&&valid_i&&(~jup)};
+                dc_ex <= {fence_i,csr_addr,csr_write,csrr,rs1,rs2,rs1_d,rs2_d,imm,pc,alu_in1_sel,alu_in2_sel,rd_sel,rd,func3,func7,lui,auipc,jal,jalr,bxx,load,store,alu_sel,sub,sra,alu_op,rd_write,ecall,mret,ebreak,ready_in&&valid_i&&(~jup)};
             end
         end
     end
@@ -419,7 +441,8 @@ module imm_decode (
   input [11:0]        imm_b, 
   input [19:0]        imm_jal, 
   input [19:0]        imm_u, 
-  input [ 4:0]        sel,
+  input [4:0]         imm_csrr,
+  input [ 6:0]        sel,
   output reg [63:0]   out  
 
 );
@@ -441,11 +464,12 @@ module imm_decode (
 
   always@(*)begin
     case(sel )
-    5'b00001:   out = ext_imm_iljalr;
-    5'b00010:   out = ext_imm_s;
-    5'b00100:   out = ext_imm_b;
-    5'b01000:   out = ext_imm_jal;
-    5'b10000:   out = ext_imm_u;
+    6'b000001:   out = ext_imm_iljalr;
+    6'b000010:   out = ext_imm_s;
+    6'b000100:   out = ext_imm_b;
+    6'b001000:   out = ext_imm_jal;
+    6'b010000:   out = ext_imm_u;
+    6'b100000:   out = {59'd0,imm_csrr};
     default:out = 64'b0;
 
     endcase     

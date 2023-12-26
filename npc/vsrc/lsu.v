@@ -4,7 +4,7 @@ module lsu(
     input clk,
     input rst_n,
 
-    input [289:0]                               dc_ls,
+    input [291:0]                               dc_ls,
     input [64+5+1-1:0]                          sideway,
     output                                      lsu_ready_in,
     output [1+32+64+5+1+1-1:0]                  wb,
@@ -28,6 +28,7 @@ module lsu(
 
 );
     wire [11:0] csr_addr;
+    wire csr_write;
     wire        csrr;
     wire [4:0]  rs1_a;
     wire [4:0]  rs2_a;
@@ -58,7 +59,7 @@ module lsu(
     wire        ebreak;
     wire        valid_i;
     wire        fence_inst;
-    assign {fence_inst,csr_addr,csrr,rs1_a,rs2_a,rs1,rs2,imm,pc,alu_in1_sel,alu_in2_sel,rd_sel,rd,func3,func7,lui,auipc,jal,jalr,bxx,load,store,alu_sel,sub,sra,alu_op,rd_write,ecall,mret,ebreak,valid_i} = dc_ls;
+    assign {fence_inst,csr_addr,csr_write,csrr,rs1_a,rs2_a,rs1,rs2,imm,pc,alu_in1_sel,alu_in2_sel,rd_sel,rd,func3,func7,lui,auipc,jal,jalr,bxx,load,store,alu_sel,sub,sra,alu_op,rd_write,ecall,mret,ebreak,valid_i} = dc_ls;
 
     wire [63:0] sideway_data;
     wire [4:0]  sideway_addr;
@@ -104,16 +105,20 @@ module lsu(
     assign addr_phase = fsm==4'h1;
     assign data_phase = fsm==4'h2;
 
-    reg [1+3+1+5+32+6+1+1+64+64-1:0]    r_lsu_buf;
+    reg [1+1+1+1+3+1+5+32+6+1+1+64+64-1:0]    r_lsu_buf;
     always@(posedge clk )begin
         if(!rst_n)begin
             r_lsu_buf <= 'b0;
         end
         else if(valid_i&&lsu_ready_in)begin
-            r_lsu_buf <= {addr_in_cache,func3,rd_write,rd,pc,ls_len,load,store,ls_addr,rs2_sw};
+            r_lsu_buf <= {addr_is_mtimecmp,addr_is_mtime,addr_uncache,addr_in_cache,func3,rd_write,rd,pc,ls_len,load,store,ls_addr,rs2_sw};
         end
     end
 
+
+    wire        ls_is_mtimecmp_buf;
+    wire        ls_is_mtime_buf;
+    wire        ls_uncache_buf;
     wire        ls_addr_in_cache_buf;
     wire [2:0]  ls_func3_buf;
     wire        ls_rd_write_buf;
@@ -125,7 +130,7 @@ module lsu(
     wire [31:0] ls_addr_buf;
     wire [63:0] ls_data_buf;
 
-    assign {ls_addr_in_cache_buf,ls_func3_buf,ls_rd_write_buf,ls_rd_buf,ls_pc_buf,ls_len_buf,ls_load_buf,ls_store_buf,ls_addr_buf,ls_data_buf} = r_lsu_buf;
+    assign {ls_is_mtimecmp_buf,ls_is_mtime_buf,ls_uncache_buf,ls_addr_in_cache_buf,ls_func3_buf,ls_rd_write_buf,ls_rd_buf,ls_pc_buf,ls_len_buf,ls_load_buf,ls_store_buf,ls_addr_buf,ls_data_buf} = r_lsu_buf;
 
     assign lsu_ready_in = fsm==4'b0;
 
@@ -140,10 +145,23 @@ module lsu(
 
 
 
+    wire addr_is_mtime;
+    assign addr_is_mtime = ls_addr==32'h200BFF8;
+    wire addr_is_mtimecmp;
+    assign addr_is_mtimecmp = ls_addr==32'h2004000;
+
+
+    wire addr_in_device;
+    `ifdef SOC
+        assign addr_uncache = ls_addr[31:28]==4'h1;
+    `else
+        assign addr_uncache = ls_addr[31:28]==4'ha;
+    `endif
+
 
     wire addr_in_cache;
     `ifdef SOC
-        assign addr_in_cache = ls_addr[31:28]==4'h8;
+        assign addr_in_cache = (ls_addr[31:28]==4'h3)||(ls_addr[31:28]==4'h8)||(ls_addr[31:26]==6'h3f);
     `else
         assign addr_in_cache = ls_addr[31:28]==4'h8;
     `endif
@@ -169,7 +187,7 @@ module lsu(
 
 
     wire [63:0] load_ext_in;
-    assign load_ext_in = cache_data_ok?cache_rdata[63:0]:sram_re_data[63:0];
+    assign load_ext_in = cache_data_ok?cache_rdata[63:0]:sram_load_data_ok?sram_re_data[63:0]:clint_out;
 
 
 /*
@@ -179,11 +197,12 @@ module lsu(
         end
     end
 */
+    wire [63:0] load_ext_out;
 
     load_ext load_ext(
         .func3(ls_func3_buf)
         ,.data_in(load_ext_in)
-        ,.data_out(wb_data)
+        ,.data_out(load_ext_out)
     );
 
     
@@ -196,7 +215,7 @@ module lsu(
 
     assign wb_write = rd_write;
     assign wb_rd = rd;
-
+    assign wb_data = load_ext_out;
 
     always@(posedge clk)begin
         if(!rst_n)begin
@@ -251,7 +270,7 @@ module lsu(
 
     assign sram_r_addr = ls_addr_buf;
     assign sram_r_type = ls_len_buf;
-    assign sram_r_req  = ls_load_buf&&(!ls_addr_in_cache_buf)&&addr_phase;
+    assign sram_r_req  = ls_load_buf&&ls_uncache_buf&&addr_phase;
 
     assign sram_busr_out = {sram_r_addr,sram_r_type,sram_r_req};
     assign {sram_re_data,sram_r_rdy,sram_re_valid} = sram_busr_in;
@@ -272,7 +291,7 @@ module lsu(
     assign sram_w_data = ls_data_buf;
     assign sram_w_type = ls_len_buf;
     assign sram_w_strb = ~16'd0;
-    assign sram_w_req  = (ls_store_buf)&&(~ls_addr_in_cache_buf)&&addr_phase;
+    assign sram_w_req  = (ls_store_buf)&&ls_uncache_buf&&addr_phase;
 
     assign sram_busw_out = {sram_w_addr,sram_w_data,sram_w_type,sram_w_strb,sram_w_req};
     assign sram_w_rdy = sram_busw_in;
@@ -293,8 +312,8 @@ module lsu(
 
     wire addr_ok_all;
     wire data_ok_all;
-    assign addr_ok_all = ls_addr_in_cache_buf?cache_addr_ok:sram_addr_ok;
-    assign data_ok_all = ls_addr_in_cache_buf?cache_data_ok:sram_load_data_ok;
+    assign addr_ok_all = ls_addr_in_cache_buf?cache_addr_ok:(ls_uncache_buf?sram_addr_ok:1'b1);
+    assign data_ok_all = ls_addr_in_cache_buf?cache_data_ok:(ls_uncache_buf?sram_load_data_ok:1'b1);
 
 
     /////////////////////////////////   
@@ -304,12 +323,16 @@ module lsu(
     wire        write_mtime;
     wire        write_mtimecmp;
 
-    assign write_mtime      = ls_store_buf&&valid_i&&(ls_addr_buf == 32'd0);
-    assign write_mtimecmp   = ls_store_buf&&valid_i&&(ls_addr_buf == 32'd0);
+    assign write_mtime      = ls_store_buf&&valid_i&&ls_is_mtime_buf;
+    assign write_mtimecmp   = ls_store_buf&&valid_i&&ls_is_mtimecmp_buf;
 
 
     reg [63:0]  mtime;
     reg [63:0]  mtimecmp;
+
+    wire [63:0] clint_out;
+
+    assign clint_out = {64{ls_is_mtime_buf}}&mtime|{64{ls_is_mtimecmp_buf}}&mtimecmp;
 
     always@(posedge clk)begin
         if(!rst_n)begin
@@ -318,18 +341,18 @@ module lsu(
         end
         else begin
             if(write_mtime)begin
-                mtime <= 'd0;
+                mtime <= ls_data_buf;
             end
             else begin
                 mtime <= mtime + 64'd1;
             end
 
             if(write_mtimecmp)begin
-                mtimecmp <= rs2_sw;
+                mtimecmp <= ls_data_buf;
             end
         end
     end
 
-    assign mtime_mtimecmp = {mtime,mtimecmp};
+    assign mtime_mtimecmp = {mtime , mtimecmp};
 
 endmodule

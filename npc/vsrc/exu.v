@@ -3,17 +3,22 @@
 module exu(
     input               clk,
     input               rst_n,
-    input [290:0]       dc_ex,
+    input [291:0]       dc_ex,
     input [64+5+1-1:0]  sideway,
     input               i_fencei_ok,
     input               i_fenced_ok,
     output [1:0]        o_fence,
     output              exu_ready_in,
+
+    input [63:0]        mtime,
+    input [63:0]        mtimecmp,
+
     output reg          jup,
     output reg [31:0]   jup_addr,
     output [1+32+64+5+1+1-1:0] wb
 );
     wire [11:0] csr_addr;
+    wire csr_write;
     wire        csrr;
     wire [4:0]  rs1_a;
     wire [4:0]  rs2_a;
@@ -44,7 +49,7 @@ module exu(
     wire        ebreak;
     wire        valid_i;
     wire        fence_inst;
-    assign {fence_inst,csr_addr,csrr,rs1_a,rs2_a,rs1,rs2,imm,pc,alu_in1_sel,alu_in2_sel,rd_sel,rd,func3,func7,lui,auipc,jal,jalr,bxx,load,store,alu_sel,sub,sra,alu_op,rd_write,ecall,mret,ebreak,valid_i} = dc_ex;
+    assign {fence_inst,csr_addr,csr_write,csrr,rs1_a,rs2_a,rs1,rs2,imm,pc,alu_in1_sel,alu_in2_sel,rd_sel,rd,func3,func7,lui,auipc,jal,jalr,bxx,load,store,alu_sel,sub,sra,alu_op,rd_write,ecall,mret,ebreak,valid_i} = dc_ex;
 
     wire [63:0] sideway_data;
     wire [4:0]  sideway_addr;
@@ -314,42 +319,66 @@ module exu(
     wire [63:0] mcause;
     wire [63:0] mstatus;
     wire [63:0] mtvec;
+    wire [63:0] mie;
+    wire [63:0] mip;
 
 
 
     always@(*)begin
         case(func3)
             3'b001: csr_in = rs1_sw;
-            3'b010: csr_in = (~rs1_sw)&csr_out;
-            3'b011: csr_in = rs1_sw|csr_out;
+            3'b010: csr_in = (rs1_sw)|csr_out;
+            3'b011: csr_in = (~rs1_sw)&csr_out;
+            3'b101: csr_in = imm;
+            3'b110: csr_in = (imm)|csr_out;
+            3'b111: csr_in = (~imm)&csr_out;
             default: csr_in = 'd0;
         endcase
     end
 
     csr_reg csr(
-        .clk(clk)
-        ,.rst_n(rst_n)
+        .clk                (clk                            )
+        ,.rst_n             (rst_n                          )
 
-        ,.addr(csr_addr)
-        ,.data_in(csr_in)
-        ,.write(csrr&&valid_i&&exu_ready_in)
-        ,.ecall(ecall&&valid_i&&exu_ready_in)
-        ,.epc({32'b0,pc})
-        ,.no(64'h11)
-        ,.data_out(csr_out)
+        ,.addr              (csr_addr                       )
+        ,.data_in           (csr_in                         )
+        ,.write             (csr_write&&csrr&&valid_i&&exu_ready_in)
+        ,.ecall             (ecall&&valid_i&&exu_ready_in   )
+        ,.timer_interrupt   (timer_interrupt                )
 
-        ,.mepc(mepc)
-        ,.mcause(mcause)
-        ,.mstatus(mstatus)
-        ,.mtvec(mtvec)
+        ,.epc               ({32'b0,pc}                     )
+        ,.data_out          (csr_out                        )
+
+        ,.mepc              (mepc                           )
+        ,.mcause            (mcause                         )
+        ,.mstatus           (mstatus                        )
+        ,.mtvec             (mtvec                          )
+        ,.mie               (mie                            )
+        ,.mip               (mip                            )
     );
 
 
+    assign mtime_big_mtimecmp = mtime >= mtimecmp;
+
+    wire enable_interrupt;
+    wire enbale_timer_interrupt;
+
+    assign enable_interrupt = mstatus[3]; //MEI bit in mstatus register
+    assign enbale_timer_interrupt = mie[7]&&enable_interrupt; //MTIE bit in mie register
+
+    wire timer_interrupt;
+    assign timer_interrupt = enbale_timer_interrupt&mtime_big_mtimecmp&(!long_inst);
+
+    wire interrupt_jup;
+    assign interrupt_jup = timer_interrupt;
 
     always@(posedge clk)begin
         if(ebreak&&valid_i&&exu_ready_in)
             $finish;
     end
+
+
+
 
     always@(posedge clk)begin
         if(!rst_n)begin
@@ -357,10 +386,13 @@ module exu(
             jup_addr<=32'b0;
         end
         else begin
-            jup<=(jalr||jal||ecall||mret)&&valid_i&&exu_ready_in||(bxx&&b_ans&&valid_i&&exu_ready_in);
-            jup_addr <= ecall?mtvec[31:0]:(mret?mepc[31:0]:alu_add[31:0]);
+            jup<=(jalr||jal||ecall||mret||interrupt_jup)&&valid_i&&exu_ready_in||(bxx&&b_ans&&valid_i&&exu_ready_in);
+            jup_addr <= (ecall||interrupt_jup)?mtvec[31:0]:(mret?mepc[31:0]:alu_add[31:0]);
         end
     end
+
+
+
 
     reg [63:0]  rd_data;
 
@@ -375,21 +407,27 @@ module exu(
         endcase
     end
 
-    reg [32+64+5+1+1-1:0]    wb_reg;
     wire rd_valid;
     assign rd_valid =   valid_i&&exu_ready_in&&(~(load||store))&&(~alu_op[3])&&(~long_inst)||
                         long_inst&&((mul_out_valid&&fsm==4'b01)||(div_out_valid&&fsm==4'b10))||
                         valid_i&&exu_ready_in&&csrr&&(~long_inst)||
                         valid_i&&exu_ready_in&&fence_inst&&(~long_inst);
 
-    wire [4:0]  fin_rd;
-    assign fin_rd = long_inst?w_long_inst_rd:rd;
+
+
+    wire [4:0]  final_rd;
+    assign final_rd = long_inst?w_long_inst_rd:rd;
+
+
+
+    reg [32+64+5+1+1-1:0]    wb_reg;
+
     always@(posedge clk)begin
         if(!rst_n)begin
             wb_reg <= 'd0;
         end
         else begin
-            wb_reg <= {pc,rd_data,fin_rd,(rd_write||long_inst)&&rd_valid,rd_valid};
+            wb_reg <= {pc,rd_data,final_rd,(rd_write||long_inst)&&rd_valid,rd_valid};
         end
     end
 
@@ -905,7 +943,30 @@ module ysyx_050518_div(
  
 endmodule
 
+module dffrs #(
+    parameter DW = 32
+) (
+    input               lden, 
+    input      [DW-1:0] dnxt,
+    output     [DW-1:0] qout,
 
+    input               clk,
+    input               rst_n
+);
+
+    reg [DW-1:0] qout_r;
+    always@(posedge clk)begin
+        if(!rst_n)begin
+            qout_r <= 'b0;
+        end
+        else begin
+            if(lden)begin
+                qout_r <= dnxt;
+            end
+        end
+    end
+    assign qout = qout_r;
+endmodule
 
 module csr_reg(
     input clk,
@@ -914,82 +975,211 @@ module csr_reg(
     input [11:0]    addr,
     input [63:0]    data_in,
     input           write,
+
     input           ecall,
+    input           mret,
+    input           timer_interrupt,
+
     input  [63:0]   epc,
-    input  [63:0]   no,
-    output [63:0]   data_out,
+
+
+    output reg [63:0]   data_out,
 
     output [63:0]   mepc,
     output [63:0]   mcause,
     output [63:0]   mstatus,
     output [63:0]   mtvec,
     output [63:0]   mip,
-    output [63:0]   mie
-    
-
-
+    output [63:0]   mie,
+    output [63:0]   mscratch
 );
 
 
 
-reg [63:0]  csr_group [7:0];
-wire [2:0]  csr_real_addr;
-csr_addr_conveter csr_read_addr_con(
-    .addr_in(addr)
-    ,.addr_out(csr_real_addr)
-);
-
-assign data_out = csr_group[csr_real_addr];
-
-assign mepc = csr_group[0];
-assign mcause = csr_group[1];
-assign mstatus = csr_group[2];
-assign mtvec = csr_group[3];
-assign mip = csr_group[5];
-assign mie = csr_group[4];
 
 
-    always@(posedge clk)begin
-        if(!rst_n)begin
-            csr_group[0] <= 64'd0;
-            csr_group[1] <= 64'd0;
-            csr_group[2] <= 64'ha00001800;
-            csr_group[3] <= 64'd0;
-            csr_group[4] <= 64'd0;
-            csr_group[5] <= 64'd0;
-            csr_group[6] <= 64'd0;
-            csr_group[7] <= 64'd0;
-        end
-        else begin
-            if(write)begin
-                csr_group[csr_real_addr] <= data_in;
-            end
-            else begin
-                if(ecall)begin
-                    csr_group[0]<=epc;
-                    csr_group[1]<=64'hb;
-                end
-            end
-        end
-    end
+
+wire status_sel;
+assign status_sel = addr==12'h300;
+
+wire status_mpie_r;
+wire status_mpie_ena;
+wire status_mpie_nxt;
+
+assign status_mpie_ena = status_sel&&write||ecall||mret||timer_interrupt;
+assign status_mpie_nxt = (ecall|timer_interrupt)?status_mie_r:(mret?1'b1:data_in[7]);
+
+dffrs #(1) status_mpie_dfflr (status_mpie_ena, status_mpie_nxt, status_mpie_r, clk, rst_n);
+
+wire status_mie_r;
+wire status_mie_ena;
+wire status_mie_nxt;
+
+assign status_mie_ena = status_sel&&write||ecall||mret||timer_interrupt;
+assign status_mie_nxt = (ecall|timer_interrupt)?1'b0:(mret?status_mie_r:data_in[3]);
+
+dffrs #(1) status_mie_dfflr (status_mie_ena, status_mie_nxt, status_mie_r, clk, rst_n);
+
+wire            status_sd_r ;
+assign          status_sd_r  = 1'b0;
+
+wire [1:0]      status_xs_r ;
+assign          status_xs_r = 2'b0; 
+
+wire [1:0]      status_fs_r ;
+assign          status_fs_r = 2'b0; 
+
+
+//////////////////////////
+// Pack to the full mstatus register
+//
+wire [63:0]                 mstatus_r;
+assign mstatus_r[63]    = status_sd_r;                        //SD
+assign mstatus_r[62:36] = 'b0; // Reserved
+assign mstatus_r[35:32] = 4'b1010; 
+assign mstatus_r[31:23] = 'b0; // Reserved
+assign mstatus_r[22:17] = 6'b0;               // TSR--MPRV
+assign mstatus_r[16:15] = status_xs_r;                        // XS
+assign mstatus_r[14:13] = status_fs_r;                        // FS
+assign mstatus_r[12:11] = 2'b11;              // MPP 
+assign mstatus_r[10:9]  = 2'b0; // Reserved
+assign mstatus_r[8]     = 1'b0;               // SPP
+assign mstatus_r[7]     = status_mpie_r;                      // MPIE
+assign mstatus_r[6]     = 1'b0; // Reserved
+assign mstatus_r[5]     = 1'b0;               // SPIE 
+assign mstatus_r[4]     = 1'b0;               // UPIE 
+assign mstatus_r[3]     = status_mie_r;                       // MIE
+assign mstatus_r[2]     = 1'b0; // Reserved
+assign mstatus_r[1]     = 1'b0;               // SIE 
+assign mstatus_r[0]     = 1'b0;               // UIE 
+
+
+
+wire mie_sel;
+assign mie_sel = addr==12'h304;
+
+wire [63:0]         mie_r;
+wire                mie_ena;
+wire [63:0]         mie_nxt;
+
+
+
+assign mie_nxt[63:12] = 'b0;
+assign mie_nxt[11   ] = data_in[11];
+assign mie_nxt[10:8 ] = 'b0;
+assign mie_nxt[7    ] = data_in[7];
+assign mie_nxt[6:4  ] = 'b0;
+assign mie_nxt[3    ] = data_in[3];
+assign mie_nxt[2:0  ] = 'b0;
+
+assign mie_ena = mie_sel&&write;
+dffrs #(64) mie_dfflr (mie_ena, mie_nxt, mie_r, clk, rst_n);
+
+
+
+wire mtvec_sel;
+assign mtvec_sel = addr==12'h305;
+
+wire [63:0]         mtvec_r;
+wire                mtvec_ena;
+wire [63:0]         mtvec_nxt;
+
+
+assign mtvec_ena = mtvec_sel&&write;
+assign mtvec_nxt = data_in;
+dffrs #(64) status_mtvec_dfflr (mtvec_ena, mtvec_nxt, mtvec_r, clk, rst_n);
+
+
+
+wire mepc_sel;
+assign mepc_sel = (addr == 12'h341);
+
+
+wire [63:0]         mepc_r;
+wire                mepc_ena;
+wire [63:0]         mepc_nxt;
+
+
+assign mepc_ena = mepc_sel&&write||ecall||timer_interrupt;
+assign mepc_nxt = write?data_in:epc;
+
+dffrs #(64) status_mepc_dfflr (mepc_ena, mepc_nxt, mepc_r, clk, rst_n);
+
+
+
+wire mcause_sel;
+assign mcause_sel = (addr == 12'h342);
+
+
+wire [63:0]         mcause_r;
+wire                mcause_ena;
+wire [63:0]         mcause_nxt;
+
+
+assign mcause_ena = mcause_sel&&write||ecall||timer_interrupt;
+assign mcause_nxt = ecall?64'd11:(timer_interrupt?{1'b1,63'd7}:data_in);
+
+dffrs #(64) status_mcause_dfflr (mcause_ena, mcause_nxt, mcause_r, clk, rst_n);
+
+
+wire mip_sel;
+assign mip_sel = (addr == 12'h344);
+
+
+wire [63:0]         mip_r;
+wire                mip_ena;
+wire [63:0]         mip_nxt;
+
+
+assign mip_nxt[63:12] = 'b0;
+assign mip_nxt[11   ] = 'b0;
+assign mip_nxt[10:8 ] = 'b0;
+assign mip_nxt[7    ] = timer_interrupt;
+assign mip_nxt[6:4  ] = 'b0;
+assign mip_nxt[3    ] = 'b0;
+assign mip_nxt[2:0  ] = 'b0;
+
+assign mip_ena = 1'b1;
+
+dffrs #(64) status_mip_dfflr (mip_ena, mip_nxt, mip_r, clk, rst_n);
+
+
+
+assign data_out = 
+                    {64{status_sel}}&mstatus_r|
+                    {64{mie_sel}}&mie_r|
+                    {64{mtvec_sel}}&mtvec_r|
+                    {64{mepc_sel}}&mepc_r|
+                    {64{mcause_sel}}&mcause_r|
+                    {64{mip_sel}}&mip_r;
+
+assign mepc = mepc_r;
+assign mcause = mcause_r;
+assign mstatus = mstatus_r;
+assign mtvec = mtvec_r;
+assign mip = mip_r;
+assign mie = mie_r;
+
+
 endmodule
 
 
 module csr_addr_conveter(
     input [11:0]    addr_in,
-    output reg [2:0]    addr_out
+    output reg [3:0]    addr_out
 
 );
     always@(*)begin
         case(addr_in)
-            12'h300:    addr_out= 3'b010;
-            12'h304:    addr_out= 3'b100;
-            12'h305:    addr_out= 3'b011;
-            
-            12'h341:    addr_out= 3'b000;
-            12'h342:    addr_out= 3'b001;
-            12'h344:    addr_out= 3'b101;
-        default:        addr_out= 3'b111;
+            12'h300:    addr_out= 4'd2;
+            12'h304:    addr_out= 4'd4;
+            12'h305:    addr_out= 4'd3;
+            12'h340:    addr_out= 4'd6;
+            12'h341:    addr_out= 4'd0;
+            12'h342:    addr_out= 4'd1;
+            12'h344:    addr_out= 4'd5;
+
+        default:        addr_out= 4'b1111;
         endcase
 
 /*

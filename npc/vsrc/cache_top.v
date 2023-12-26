@@ -467,7 +467,7 @@ module cache_top(
     random ra(
         .clk(clk)
         ,.rst_n(rst_n)
-        ,.change(fsm==4'h1)
+        ,.change(fsm==4'h0)
         ,.out(random)
     );
 
