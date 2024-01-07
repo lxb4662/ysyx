@@ -32,7 +32,7 @@ void vga_update_screen() {
   // then zero out the sync register
 
   if(vgtctl[1]){
-    printf("update screen\n");
+    //printf("update screen\n");
     update_screen();
     vgtctl[1]=0;
   }
