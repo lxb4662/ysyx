@@ -1,4 +1,4 @@
-//`include "vsrc/define.v"
+`include "vsrc/define.v"
 
 `ifndef SOC
     import "DPI-C" function void status_cpy(input int addr,input int a1,input int a0,input int write,input int pc,input int incache,input int valid);
@@ -77,7 +77,7 @@ module ysyx_22050518(
 	output[63:0] 		            io_slave_rdata,	
 	output 		                    io_slave_rlast,
 
-    output[5:0]  	io_sram0_addr,	
+   	output[5:0]  	io_sram0_addr,	
 	output       	io_sram0_cen,	
 	output       	io_sram0_wen,	
 	output[127:0] 	io_sram0_wmask,	
@@ -168,7 +168,7 @@ module ysyx_22050518(
 
 
     wire [1+64+32+5+1+1-1:0]        wb_ex;
-    wire [291:0]                    dc_ex;
+    wire [289:0]                    dc_ex;
     dc dc(
         .clk                            (clk)
         ,.rst_n                         (rst_n)
@@ -192,6 +192,9 @@ module ysyx_22050518(
 
 
     wire [64+64-1:0]    mtime_mtimecmp;
+
+    wire fence_i_ok;
+    wire fence_d_ok;
 
     exu exu(
         
@@ -273,7 +276,7 @@ module ysyx_22050518(
     wire        wb_valid_ls;
     wire        wb_incache_ls;
 
-    assign {wb_pc_ex,wb_data_ex,wb_addr_ex,wb_writ_ex,wb_valid_ex} = wb_ex;
+    assign {wb_pc_ex,wb_data_ex,wb_addr_ex,wb_writ_ex,wb_valid_ex} = wb_ex[64+32+5+1+1-1:0];
     assign {wb_incache_ls,wb_pc_ls,wb_data_ls,wb_addr_ls,wb_writ_ls,wb_valid_ls} = wb_ls;
 
     wire [31:0] wb_pc;

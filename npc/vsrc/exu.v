@@ -1,9 +1,9 @@
 
-//`include "vsrc/define.v"
+`include "vsrc/define.v"
 module exu(
     input               clk,
     input               rst_n,
-    input [291:0]       dc_ex,
+    input [289:0]       dc_ex,
     input [64+5+1-1:0]  sideway,
     input               i_fencei_ok,
     input               i_fenced_ok,
@@ -166,7 +166,7 @@ module exu(
     wire [63:0] shift_arw;
     wire [63:0] shift_srl;
 
-    `ifdef SHIFT
+    //`ifdef SHIFT
         ysyx_050518_shift ysyx_050518_shift(
         .in0(alu_in1)
         ,.in1((alu_w||alu_iw)?{59'd0,alu_in2[4:0]}:alu_in2)
@@ -177,12 +177,12 @@ module exu(
         ,.a_r_w(shift_arw));
 
         assign alu_srl = (alu_w||alu_iw)?shift_arw:shift_srl;
-    `else
+    /*`else
         assign alu_srl = (alu_w||alu_iw)?shift_arw:shift_srl;
         assign shift_arw = sra?(alu_in1[31:0] >>> alu_in2[4:0]):(alu_in1[31:0] >> alu_in2);
         assign shift_srl = sra?(alu_in1 >>> alu_in2[5:0]):(alu_in1 >> alu_in2);
         assign alu_sll = alu_in1 << alu_in2;
-    `endif
+    `endif*/
 
 
 
@@ -357,7 +357,7 @@ module exu(
         ,.mip               (mip                            )
     );
 
-
+    wire mtime_big_mtimecmp;
     assign mtime_big_mtimecmp = mtime >= mtimecmp;
 
     wire enable_interrupt;

@@ -211,7 +211,7 @@ ysyx_22050518 top(
 	wire  	        io_master_wready;
 	wire   	        io_master_wvalid;
 	wire  [63:0] 	io_master_wdata;
-	wire  [7:0] 	io_master_wstrb;
+	wire  [3:0] 	io_master_wstrb;
 	wire   	        io_master_wlast;
 
 	wire   	        io_master_bready;
@@ -312,13 +312,13 @@ myip_v1_0_S00_AXI myip_v1_0_S00_AXI_inst (
 		.S_AXI_ACLK(clock),
 		.S_AXI_ARESETN(~reset),
 		
-		.S_AXI_AWADDR(io_master_awaddr),
+		.S_AXI_AWADDR({32'b0,io_master_awaddr}),
 		.S_AXI_AWPROT(),
 		.S_AXI_AWVALID(io_master_awvalid),
 		.S_AXI_AWREADY(io_master_awready),
         .S_AXI_AWID(io_master_awid),
 
-		.S_AXI_WDATA(io_master_wdata),
+		.S_AXI_WDATA(io_master_wdata[31:0]),
 		.S_AXI_WSTRB(io_master_wstrb),
 		.S_AXI_WVALID(io_master_wvalid),
 		.S_AXI_WREADY(io_master_wready),
@@ -328,14 +328,14 @@ myip_v1_0_S00_AXI myip_v1_0_S00_AXI_inst (
 		.S_AXI_BREADY(1'b1),
 		.S_AXI_BID(io_master_bid),
 
-		.S_AXI_ARADDR(io_master_araddr),
+		.S_AXI_ARADDR({32'b0,io_master_araddr}),
 		.S_AXI_ARPROT(),
 		.S_AXI_ARVALID(io_master_arvalid),
 		.S_AXI_ARREADY(io_master_arready),
         .S_AXI_ARID(io_master_arid),
 
 
-		.S_AXI_RDATA(io_master_rdata),
+		.S_AXI_RDATA(io_master_rdata[31:0]),
 		.S_AXI_RRESP(io_master_rresp),
 		.S_AXI_RVALID(io_master_rvalid),
 		.S_AXI_RREADY(io_master_rready),

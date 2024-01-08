@@ -1,10 +1,10 @@
 
-//`include "vsrc/define.v"
+`include "vsrc/define.v"
 module lsu(
     input clk,
     input rst_n,
 
-    input [291:0]                               dc_ls,
+    input [289:0]                               dc_ls,
     input [64+5+1-1:0]                          sideway,
     output                                      lsu_ready_in,
     output [1+32+64+5+1+1-1:0]                  wb,
@@ -92,7 +92,7 @@ module lsu(
 
     always@(*)begin
         case(fsm)
-            4'h0:   fsm_next = valid_i&&lsu_ready_in&&(load||store);
+            4'h0:   fsm_next = valid_i&&lsu_ready_in&&(load||store)?4'b1:4'b0;
             4'h1:   fsm_next = addr_ok_all?(ls_store_buf?4'h0:4'h2):4'h1;
             4'h2:   fsm_next = data_ok_all?'h0:4'h2;
             default:    fsm_next = 'b0;
@@ -105,7 +105,7 @@ module lsu(
     assign addr_phase = fsm==4'h1;
     assign data_phase = fsm==4'h2;
 
-    reg [1+1+1+1+3+1+5+32+6+1+1+64+64-1:0]    r_lsu_buf;
+    reg [1+1+1+1+3+1+5+32+6+1+1+32+64-1:0]    r_lsu_buf;
     always@(posedge clk )begin
         if(!rst_n)begin
             r_lsu_buf <= 'b0;
@@ -150,7 +150,7 @@ module lsu(
     wire addr_is_mtimecmp;
     assign addr_is_mtimecmp = ls_addr==32'h2004000;
 
-
+    wire addr_uncache;
     wire addr_in_device;
     `ifdef SOC
         assign addr_uncache = ls_addr[31:28]==4'h1;

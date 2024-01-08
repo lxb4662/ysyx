@@ -1,6 +1,6 @@
 
 
-//`include "vsrc/define.v"
+`include "vsrc/define.v"
 /*
 `define MEM_BUS_DATA_WIDTH 256
 `define MEM_BUS_ADDR_WIDTH 32

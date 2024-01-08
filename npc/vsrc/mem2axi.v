@@ -742,7 +742,7 @@ module mem2axi(
     output                              iw_rdy,
 
 
-    output [`AXI_DATA_WIDTH-1:0]        ar_addr,
+    output [`AXI_ADDR_WIDTH-1:0]        ar_addr,
     output                              ar_valid,
     output [`AXI_IDDD_WIDTH-1:0]        ar_id,
     output [`AXI_LENN_WIDTH-1:0]        ar_len,
@@ -983,6 +983,7 @@ module m_mem2_axi_send_channel(
             6'b100011: w_size = `AXI_SIZE_WIDTH'b010;
             6'b100111: w_size = `AXI_SIZE_WIDTH'b011;
             6'b111111: w_size = `AXI_SIZE_WIDTH'b011;
+            default:   w_size = `AXI_SIZE_WIDTH'b000;
         endcase
     end
 
@@ -1113,7 +1114,7 @@ module m_mem2_axi_send_channel(
 
     wire                        w_valid_r;
     wire                        w_valid_next;
-    wire                        a_valid_ena;
+    wire                        w_valid_ena;
     assign w_valid_ena = fsmd_r&&((w_cnt_r==8'b0)||sending_last_data&&send_a_data);
     assign w_valid_next = ~w_valid_r;
 
@@ -1125,7 +1126,7 @@ module m_mem2_axi_send_channel(
     assign w_last_ena = 1'b1;
     assign w_last_next = 1'b1;
 
-    dffrs #(1) w_last_dfflr (w_len_ena,w_len_next,w_len_r, clk, rst_n);
+    dffrs #(1) w_last_dfflr (w_last_ena,w_last_next,w_last_r, clk, rst_n);
 
 
     assign aw_addr = aw_addr_r;
@@ -1205,7 +1206,7 @@ module m_mem2_axi_read_channel(
     wire                            type_ena;
     assign type_ena = ir_req&&ir_rdy;
     assign type_next = ir_type;
-    dffrs #(8) type_dfflr (type_ena, type_next, type_r, clk, rst_n);
+    dffrs #(`SRAM_BUS_TYPE_WIDTH) type_dfflr (type_ena, type_next, type_r, clk, rst_n);
 
     wire [`SRAM_BUS_ADDR_WIDTH-1:0] addr_r;
     wire [`SRAM_BUS_ADDR_WIDTH-1:0] addr_next;
@@ -1433,7 +1434,7 @@ module m_mem2_axi_read_channel(
 
 endmodule
 
-
+/*
 
 module dffrs #(
     parameter DW = 32
@@ -1459,3 +1460,5 @@ module dffrs #(
     end
     assign qout = qout_r;
 endmodule
+
+*/

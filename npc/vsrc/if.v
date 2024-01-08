@@ -1,5 +1,5 @@
 
-//`include "vsrc/define.v"
+`include "vsrc/define.v"
 
 `ifndef SOC
     import "DPI-C" function void mtrace(input int pc ,input int addr,input int a0,input int a1,input int len);
@@ -140,7 +140,7 @@ module dc(
     input [5+64+1-1:0]      wb_dc,
     
 
-    output reg [291:0]      dc_ex,
+    output reg [289:0]      dc_ex,
     output                  ready_in,
     input                   next_stage_ready,
     
@@ -248,6 +248,8 @@ module dc(
 
     wire    csr_write;
     wire    csr_read;
+
+    wire    csr_imm_inst;
 
     assign csr_write = (inst_csrs||inst_csrc)&&(rs1!=5'd0)||inst_csrw;
     assign csr_read  = inst_csrw&&(rd!=5'd0)||inst_csrs||inst_csrc;
@@ -442,7 +444,7 @@ module imm_decode (
   input [19:0]        imm_jal, 
   input [19:0]        imm_u, 
   input [4:0]         imm_csrr,
-  input [ 6:0]        sel,
+  input [ 5:0]        sel,
   output reg [63:0]   out  
 
 );
