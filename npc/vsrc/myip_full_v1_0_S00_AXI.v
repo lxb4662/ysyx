@@ -325,7 +325,7 @@
 	// Slave register read enable is asserted when valid address is available
 	// and the slave is ready to accept the read address.
 	assign slv_reg_rden = axi_arready & S_AXI_ARVALID & ~axi_rvalid;
-	always @(*)
+	always @(slv_reg_rden)
 	begin
 
 			reg_data_out = mem_read(axi_araddr,4);
