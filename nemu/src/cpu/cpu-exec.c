@@ -74,10 +74,10 @@ void print_iring_buf(){
   }
 }
 
-static void exec_once(Decode *s, vaddr_t pc) {
+static void exec_once(Decode *s, vaddr_t pc,word_t inst_info[]) {
   s->pc = pc;
   s->snpc = pc;
-  isa_exec_once(s);
+  isa_exec_once(s,inst_info);
   cpu.pc = s->dnpc;
 #ifdef CONFIG_ITRACE
   char *p = s->logbuf;
@@ -101,17 +101,19 @@ static void exec_once(Decode *s, vaddr_t pc) {
   iring_update(s->logbuf);
     //printf("%s\n",p);
 #endif
-
-
 }
 
 static void execute(uint64_t n) {
   Decode s;
+  word_t inst_info[10];
   for (;n > 0; n --) {
-    exec_once(&s, cpu.pc);
+    exec_once(&s, cpu.pc,inst_info);
     g_nr_guest_inst ++;
     trace_and_difftest(&s, cpu.pc);
-    if (nemu_state.state != NEMU_RUNNING) break;
+    if (nemu_state.state != NEMU_RUNNING) {
+      printf("\nRS1:%16lx,RS2:%16lx,IMM:%16lx,PC:%8lx\n",inst_info[0],inst_info[1],inst_info[2],inst_info[3]);
+      break;
+    }
     IFDEF(CONFIG_DEVICE, device_update());
   }
 }

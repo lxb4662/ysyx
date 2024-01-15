@@ -101,23 +101,18 @@ static void decode_operand(Decode *s, int *dest, word_t *src1, word_t *src2, wor
   }
 }
 
-static int decode_exec(Decode *s) {
+static int decode_exec(Decode *s ,word_t inst_info[]) {
   int dest = 0;
   word_t src1 = 0, src2 = 0, imm = 0, csr = 0;
   s->dnpc = s->snpc;
 
 #define INSTPAT_INST(s) ((s)->isa.inst.val)
-#define INSTPAT_MATCH(s, name, type, ... /* execute body */ ) { \
-  decode_operand(s, &dest, &src1, &src2, &imm,&csr, concat(TYPE_, type)); \
-  __VA_ARGS__ ; \
-}
+#define INSTPAT_MATCH(s, name, type, ... /* execute body */ ) {   decode_operand(s, &dest, &src1, &src2, &imm, &csr, concat(TYPE_, type));   __VA_ARGS__ ; }
 
   INSTPAT_START();
 
-
-
   INSTPAT("??????? ????? ????? ??? ????? 01101 11", lui    , U, R(dest) = imm);
-  INSTPAT("??????? ????? ????? ??? ????? 00101 11", auipc  , U, R(dest) = s->pc + imm);  //
+  INSTPAT("??????? ????? ????? ??? ????? 00101 11", auipc  , U, R(dest) = s->pc + imm+4);  //
 
   INSTPAT("??????? ????? ????? ??? ????? 11011 11", jar    , J, s->dnpc = s->pc + imm; R(dest) =s->snpc;);
   INSTPAT("??????? ????? ????? 000 ????? 11001 11", jalr   , I, s->dnpc   = (src1+imm)&(long long int)~1 ;R(dest) =s->snpc;);
@@ -202,10 +197,14 @@ static int decode_exec(Decode *s) {
 
   R(0) = 0; // reset $zero to 0
 
+  inst_info[0] = src1;
+  inst_info[1] = src2;
+  inst_info[2] = imm;
+  inst_info[3] = s->pc;
   return 0;
 }
 
-int isa_exec_once(Decode *s) {
+int isa_exec_once(Decode *s,word_t inst_info[]) {
   s->isa.inst.val = inst_fetch(&s->snpc, 4);
-  return decode_exec(s);
+  return decode_exec(s,inst_info);
 }
