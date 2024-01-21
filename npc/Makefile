@@ -49,7 +49,7 @@ run: $(BIN)
 	@$^ $(IMG)
 
 soc:
-	cat $(addprefix vsrc/,top.v  if.v lsu.v exu.v add.v cache_top.v ram.v mem2axi.v) > soc.v
+	cat $(addprefix vsrc/,define.v top.v  if.v lsu.v exu.v add.v cache_top.v ram.v mem2axi.v) > soc.v
 
 sim:
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
