@@ -142,7 +142,7 @@ module dc(
 
     output reg [289:0]      dc_ex,
     output                  ready_in,
-    input                   next_stage_ready,
+    input                   next_stage_ready
     
 );
 
